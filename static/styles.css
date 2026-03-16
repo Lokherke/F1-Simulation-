@@ -1,0 +1,263 @@
+:root {
+  --bg: #f6f1e5;
+  --bg-2: #e9dcc3;
+  --ink: #0f1b2d;
+  --muted: #415069;
+  --accent: #d62828;
+  --accent-2: #f77f00;
+  --card: rgba(255, 250, 242, 0.88);
+  --line: rgba(28, 43, 64, 0.15);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at 12% 20%, #ffe8b3 0%, transparent 40%),
+              radial-gradient(circle at 88% 80%, #ffd6b0 0%, transparent 45%),
+              linear-gradient(125deg, var(--bg), var(--bg-2));
+  color: var(--ink);
+  font-family: "Space Grotesk", sans-serif;
+  padding: 1.2rem;
+  position: relative;
+}
+
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+                    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+  background-size: 26px 26px;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.hero {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 0.3rem 0 1rem;
+}
+
+.kicker {
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+  font-size: 0.82rem;
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Bebas Neue", cursive;
+  letter-spacing: 0.03em;
+  margin: 0;
+}
+
+h1 {
+  font-size: clamp(2.2rem, 6vw, 4.4rem);
+  line-height: 0.95;
+  color: #111e33;
+  margin-top: 0.2rem;
+}
+
+.sub {
+  max-width: 840px;
+  color: var(--muted);
+  margin: 0.8rem 0 0;
+}
+
+.panel {
+  max-width: 1100px;
+  margin: 0 auto 1rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 0.9rem;
+  background: var(--card);
+  backdrop-filter: blur(4px);
+}
+
+.controls {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  align-items: end;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+input {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 0.6rem 0.7rem;
+  font-family: inherit;
+  background: #fffdf8;
+  color: var(--ink);
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.67rem 0.9rem;
+  font-family: inherit;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(120deg, var(--accent), var(--accent-2));
+  cursor: pointer;
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  filter: saturate(1.08);
+}
+
+.layout {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.season-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+  backdrop-filter: blur(5px);
+  padding: 1rem;
+}
+
+.season-card h2 {
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+.champions {
+  margin-top: 0.6rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.7rem;
+}
+
+.champions article {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.7rem 0.8rem;
+  background: #fffbf4;
+}
+
+.champions span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.champions strong {
+  display: block;
+  margin-top: 0.2rem;
+  font-size: 1.15rem;
+}
+
+.tables {
+  margin-top: 0.8rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
+  gap: 0.7rem;
+}
+
+.table-block {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.7rem;
+  background: #fffdf8;
+}
+
+.table-block h3 {
+  font-size: 1.4rem;
+  margin-bottom: 0.2rem;
+}
+
+ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+li {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px dashed rgba(10, 26, 46, 0.12);
+  position: relative;
+}
+
+li:last-child {
+  border-bottom: none;
+}
+
+.rank {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.name {
+  color: #17263d;
+  padding-right: 0.5rem;
+}
+
+.value {
+  color: #21324f;
+  font-weight: 500;
+}
+
+.bar {
+  position: absolute;
+  left: 26px;
+  right: 8px;
+  bottom: 4px;
+  height: 5px;
+  width: min(var(--w), 100%);
+  background: linear-gradient(90deg, #ff8f00, #e63946);
+  border-radius: 999px;
+  opacity: 0.34;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: rise 0.55s ease forwards;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes rise {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 700px) {
+  body {
+    padding: 0.9rem;
+  }
+
+  .panel,
+  .season-card {
+    padding: 0.8rem;
+  }
+
+  .table-block h3 {
+    font-size: 1.2rem;
+  }
+}

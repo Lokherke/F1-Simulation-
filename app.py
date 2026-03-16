@@ -1,0 +1,356 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Dict, List, Tuple
+import random
+
+
+POINTS_TABLE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
+
+
+@dataclass(frozen=True)
+class Team:
+	name: str
+	engine_performance: float
+	aero_efficiency: float
+	chassis_balance: float
+	mechanical_grip: float
+	reliability: float
+	pit_stop_efficiency: float
+	strategy_quality: float
+	tire_management: float
+	development_rate: float
+	regulation_adaptability: float
+
+
+@dataclass(frozen=True)
+class Driver:
+	name: str
+	team: str
+	pace: float
+	consistency: float
+	racecraft: float
+	wet_skill: float
+	tire_feedback: float
+	adaptability: float
+
+
+@dataclass(frozen=True)
+class TrackProfile:
+	name: str
+	power_sensitivity: float
+	aero_sensitivity: float
+	grip_sensitivity: float
+	overtaking_difficulty: float
+	weather_volatility: float
+
+
+@dataclass(frozen=True)
+class SeasonPrediction:
+	champion_driver: str
+	champion_constructor: str
+	driver_title_probabilities: Dict[str, float]
+	constructor_title_probabilities: Dict[str, float]
+	expected_driver_points: Dict[str, float]
+	expected_constructor_points: Dict[str, float]
+
+
+def _clamp(value: float, minimum: float = 0.0, maximum: float = 100.0) -> float:
+	return max(minimum, min(maximum, value))
+
+
+def build_default_grid() -> Tuple[List[Team], List[Driver]]:
+	teams = [
+		Team("Red Falcon", 92, 91, 89, 85, 87, 90, 91, 86, 88, 90),
+		Team("Silver Arrow", 90, 88, 88, 84, 89, 87, 88, 85, 86, 87),
+		Team("Midnight Papaya", 88, 89, 87, 86, 85, 86, 85, 87, 90, 88),
+		Team("British Green", 84, 86, 84, 84, 82, 84, 82, 84, 84, 83),
+		Team("Alpine Blue", 82, 82, 83, 81, 81, 83, 80, 82, 82, 80),
+		Team("Toro Ruby", 81, 80, 80, 79, 80, 82, 79, 80, 81, 80),
+		Team("Sauber Lime", 80, 79, 79, 79, 79, 81, 78, 79, 82, 82),
+		Team("Atlantic Black", 78, 78, 78, 78, 78, 79, 77, 78, 79, 78),
+		Team("Haas Steel", 77, 76, 76, 76, 77, 78, 76, 77, 78, 77),
+		Team("Williams Navy", 79, 77, 77, 77, 76, 80, 77, 78, 80, 79),
+	]
+
+	drivers = [
+		Driver("A. Blaze", "Red Falcon", 95, 91, 92, 88, 89, 92),
+		Driver("L. Frost", "Red Falcon", 90, 88, 89, 86, 87, 89),
+		Driver("G. Knight", "Silver Arrow", 93, 90, 90, 89, 88, 90),
+		Driver("R. Vega", "Silver Arrow", 88, 87, 88, 85, 85, 88),
+		Driver("P. Stone", "Midnight Papaya", 91, 89, 90, 87, 88, 90),
+		Driver("N. Drake", "Midnight Papaya", 87, 86, 87, 84, 85, 87),
+		Driver("F. Hart", "British Green", 86, 85, 86, 83, 84, 85),
+		Driver("Y. Cole", "British Green", 84, 83, 84, 81, 82, 84),
+		Driver("E. Silva", "Alpine Blue", 84, 82, 84, 82, 83, 83),
+		Driver("O. Quinn", "Alpine Blue", 82, 81, 82, 80, 81, 82),
+		Driver("D. Rowan", "Toro Ruby", 83, 82, 83, 81, 82, 83),
+		Driver("K. Vale", "Toro Ruby", 81, 80, 81, 79, 80, 81),
+		Driver("M. Gray", "Sauber Lime", 82, 80, 81, 80, 81, 82),
+		Driver("T. Hale", "Sauber Lime", 80, 79, 80, 78, 79, 80),
+		Driver("J. Cross", "Atlantic Black", 79, 78, 79, 77, 78, 79),
+		Driver("I. Reed", "Atlantic Black", 78, 77, 78, 76, 77, 78),
+		Driver("S. Ford", "Haas Steel", 79, 78, 79, 76, 77, 79),
+		Driver("B. Lake", "Haas Steel", 77, 76, 77, 75, 76, 77),
+		Driver("C. North", "Williams Navy", 80, 79, 80, 78, 79, 81),
+		Driver("V. Dale", "Williams Navy", 78, 77, 78, 76, 77, 79),
+	]
+	return teams, drivers
+
+
+def build_default_calendar() -> List[TrackProfile]:
+	return [
+		TrackProfile("Bahrain", 0.72, 0.66, 0.70, 0.48, 0.22),
+		TrackProfile("Jeddah", 0.86, 0.62, 0.58, 0.42, 0.18),
+		TrackProfile("Melbourne", 0.68, 0.70, 0.66, 0.50, 0.30),
+		TrackProfile("Suzuka", 0.65, 0.85, 0.73, 0.60, 0.38),
+		TrackProfile("Shanghai", 0.74, 0.72, 0.67, 0.49, 0.27),
+		TrackProfile("Miami", 0.78, 0.63, 0.61, 0.44, 0.33),
+		TrackProfile("Imola", 0.63, 0.84, 0.76, 0.62, 0.29),
+		TrackProfile("Monaco", 0.40, 0.90, 0.88, 0.94, 0.25),
+		TrackProfile("Montreal", 0.79, 0.61, 0.65, 0.46, 0.32),
+		TrackProfile("Barcelona", 0.64, 0.86, 0.71, 0.58, 0.31),
+		TrackProfile("Spielberg", 0.82, 0.62, 0.66, 0.43, 0.40),
+		TrackProfile("Silverstone", 0.70, 0.84, 0.69, 0.57, 0.42),
+		TrackProfile("Hungaroring", 0.52, 0.88, 0.82, 0.75, 0.30),
+		TrackProfile("Spa", 0.83, 0.80, 0.67, 0.48, 0.50),
+		TrackProfile("Zandvoort", 0.56, 0.87, 0.79, 0.72, 0.36),
+		TrackProfile("Monza", 0.95, 0.46, 0.54, 0.33, 0.24),
+		TrackProfile("Baku", 0.89, 0.54, 0.58, 0.40, 0.41),
+		TrackProfile("Singapore", 0.48, 0.86, 0.83, 0.78, 0.44),
+		TrackProfile("Austin", 0.73, 0.75, 0.72, 0.55, 0.34),
+		TrackProfile("Mexico City", 0.76, 0.68, 0.69, 0.52, 0.26),
+		TrackProfile("Sao Paulo", 0.70, 0.73, 0.74, 0.56, 0.51),
+		TrackProfile("Las Vegas", 0.92, 0.52, 0.57, 0.36, 0.17),
+		TrackProfile("Lusail", 0.67, 0.82, 0.71, 0.53, 0.20),
+		TrackProfile("Abu Dhabi", 0.74, 0.74, 0.68, 0.50, 0.19),
+	]
+
+
+def _weather_index(track: TrackProfile, rng: random.Random) -> float:
+	# 0 means dry race, 1 means very wet and unstable race.
+	return _clamp((track.weather_volatility * 100) + rng.gauss(0, 12), 0, 100) / 100
+
+
+def _performance_score(
+	driver: Driver,
+	team: Team,
+	track: TrackProfile,
+	weather_index: float,
+	rng: random.Random,
+) -> float:
+	# Technical package score by circuit profile.
+	car_score = (
+		team.engine_performance * track.power_sensitivity * 0.24
+		+ team.aero_efficiency * track.aero_sensitivity * 0.24
+		+ team.mechanical_grip * track.grip_sensitivity * 0.18
+		+ team.chassis_balance * 0.14
+		+ team.tire_management * 0.10
+		+ team.reliability * 0.10
+	)
+
+	# Human/execution score with weather-dependent adjustments.
+	driver_score = (
+		driver.pace * 0.40
+		+ driver.consistency * 0.18
+		+ driver.racecraft * (0.16 + 0.08 * track.overtaking_difficulty)
+		+ driver.tire_feedback * 0.10
+		+ driver.adaptability * 0.08
+		+ driver.wet_skill * (0.08 + 0.16 * weather_index)
+	)
+
+	# Operations score: strategy and pit stop quality are amplified in volatile conditions.
+	operations_score = (
+		team.strategy_quality * (0.55 + 0.20 * weather_index)
+		+ team.pit_stop_efficiency * (0.45 - 0.05 * weather_index)
+	)
+
+	# Reliability and incident model.
+	dnf_probability = _clamp(18 - team.reliability * 0.14 - driver.consistency * 0.07, 1.5, 12.0) / 100
+	if rng.random() < dnf_probability:
+		return -200.0
+
+	incident_penalty = 0.0
+	if rng.random() < (0.04 + weather_index * 0.06):
+		incident_penalty = rng.uniform(6.0, 16.0)
+
+	randomness = rng.gauss(0, 3.2 + weather_index * 2.4)
+	return car_score * 0.50 + driver_score * 0.34 + operations_score * 0.16 + randomness - incident_penalty
+
+
+def _simulate_single_race(
+	drivers: List[Driver],
+	team_map: Dict[str, Team],
+	track: TrackProfile,
+	rng: random.Random,
+) -> List[Tuple[str, str, float]]:
+	weather_index = _weather_index(track, rng)
+	race_scores: List[Tuple[str, str, float]] = []
+
+	for driver in drivers:
+		team = team_map[driver.team]
+		score = _performance_score(driver, team, track, weather_index, rng)
+		race_scores.append((driver.name, driver.team, score))
+
+	race_scores.sort(key=lambda entry: entry[2], reverse=True)
+	return race_scores
+
+
+def _simulate_season_once(
+	teams: List[Team],
+	drivers: List[Driver],
+	calendar: List[TrackProfile],
+	rng: random.Random,
+) -> Tuple[Dict[str, int], Dict[str, int]]:
+	team_map = {team.name: team for team in teams}
+	driver_points = {driver.name: 0 for driver in drivers}
+	constructor_points = {team.name: 0 for team in teams}
+
+	for track in calendar:
+		result = _simulate_single_race(drivers, team_map, track, rng)
+		for idx, (driver_name, team_name, score) in enumerate(result):
+			if idx < len(POINTS_TABLE) and score > -150:
+				points = POINTS_TABLE[idx]
+				driver_points[driver_name] += points
+				constructor_points[team_name] += points
+
+	return driver_points, constructor_points
+
+
+def _select_champion(points: Dict[str, int], rng: random.Random) -> str:
+	top_score = max(points.values())
+	tied = [name for name, value in points.items() if value == top_score]
+	if len(tied) == 1:
+		return tied[0]
+	return rng.choice(tied)
+
+
+def predict_season(
+	teams: List[Team],
+	drivers: List[Driver],
+	calendar: List[TrackProfile],
+	simulations: int = 2000,
+	seed: int | None = None,
+) -> SeasonPrediction:
+	rng = random.Random(seed)
+	driver_title_wins = {driver.name: 0 for driver in drivers}
+	constructor_title_wins = {team.name: 0 for team in teams}
+	total_driver_points = {driver.name: 0 for driver in drivers}
+	total_constructor_points = {team.name: 0 for team in teams}
+
+	for _ in range(simulations):
+		driver_points, constructor_points = _simulate_season_once(teams, drivers, calendar, rng)
+
+		for name, points in driver_points.items():
+			total_driver_points[name] += points
+		for name, points in constructor_points.items():
+			total_constructor_points[name] += points
+
+		driver_champion = _select_champion(driver_points, rng)
+		constructor_champion = _select_champion(constructor_points, rng)
+		driver_title_wins[driver_champion] += 1
+		constructor_title_wins[constructor_champion] += 1
+
+	driver_title_probabilities = {
+		name: wins / simulations for name, wins in sorted(driver_title_wins.items(), key=lambda item: item[1], reverse=True)
+	}
+	constructor_title_probabilities = {
+		name: wins / simulations
+		for name, wins in sorted(constructor_title_wins.items(), key=lambda item: item[1], reverse=True)
+	}
+	expected_driver_points = {
+		name: total_driver_points[name] / simulations
+		for name in sorted(total_driver_points, key=total_driver_points.get, reverse=True)
+	}
+	expected_constructor_points = {
+		name: total_constructor_points[name] / simulations
+		for name in sorted(total_constructor_points, key=total_constructor_points.get, reverse=True)
+	}
+
+	champion_driver = next(iter(driver_title_probabilities))
+	champion_constructor = next(iter(constructor_title_probabilities))
+
+	return SeasonPrediction(
+		champion_driver=champion_driver,
+		champion_constructor=champion_constructor,
+		driver_title_probabilities=driver_title_probabilities,
+		constructor_title_probabilities=constructor_title_probabilities,
+		expected_driver_points=expected_driver_points,
+		expected_constructor_points=expected_constructor_points,
+	)
+
+
+def project_next_season(
+	teams: List[Team],
+	drivers: List[Driver],
+	seed: int | None = None,
+) -> Tuple[List[Team], List[Driver]]:
+	rng = random.Random(seed)
+	projected_teams: List[Team] = []
+	projected_drivers: List[Driver] = []
+
+	for team in teams:
+		regulation_noise = rng.gauss(0, 2.0)
+		technical_gain = (
+			team.development_rate * 0.08 + team.regulation_adaptability * 0.06 + regulation_noise
+		)
+
+		projected_teams.append(
+			Team(
+				name=team.name,
+				engine_performance=_clamp(team.engine_performance + technical_gain * rng.uniform(0.5, 1.0)),
+				aero_efficiency=_clamp(team.aero_efficiency + technical_gain * rng.uniform(0.6, 1.1)),
+				chassis_balance=_clamp(team.chassis_balance + technical_gain * rng.uniform(0.5, 1.0)),
+				mechanical_grip=_clamp(team.mechanical_grip + technical_gain * rng.uniform(0.5, 1.0)),
+				reliability=_clamp(team.reliability + technical_gain * rng.uniform(0.4, 0.9)),
+				pit_stop_efficiency=_clamp(team.pit_stop_efficiency + rng.gauss(0.5, 1.4)),
+				strategy_quality=_clamp(team.strategy_quality + rng.gauss(0.4, 1.6)),
+				tire_management=_clamp(team.tire_management + technical_gain * rng.uniform(0.4, 0.8)),
+				development_rate=_clamp(team.development_rate + rng.gauss(0.0, 1.5)),
+				regulation_adaptability=_clamp(team.regulation_adaptability + rng.gauss(0.3, 1.8)),
+			)
+		)
+
+	for driver in drivers:
+		trajectory = rng.gauss(0.5, 1.5)
+		projected_drivers.append(
+			Driver(
+				name=driver.name,
+				team=driver.team,
+				pace=_clamp(driver.pace + trajectory * rng.uniform(0.3, 0.8)),
+				consistency=_clamp(driver.consistency + trajectory * rng.uniform(0.2, 0.8)),
+				racecraft=_clamp(driver.racecraft + trajectory * rng.uniform(0.2, 0.7)),
+				wet_skill=_clamp(driver.wet_skill + trajectory * rng.uniform(0.1, 0.8)),
+				tire_feedback=_clamp(driver.tire_feedback + trajectory * rng.uniform(0.2, 0.7)),
+				adaptability=_clamp(driver.adaptability + trajectory * rng.uniform(0.3, 0.9)),
+			)
+		)
+
+	return projected_teams, projected_drivers
+
+
+def predict_current_and_next_season(
+	simulations: int = 2000,
+	seed: int | None = None,
+) -> Tuple[SeasonPrediction, SeasonPrediction]:
+	teams, drivers = build_default_grid()
+	calendar = build_default_calendar()
+
+	current_prediction = predict_season(
+		teams=teams,
+		drivers=drivers,
+		calendar=calendar,
+		simulations=simulations,
+		seed=seed,
+	)
+
+	projected_teams, projected_drivers = project_next_season(teams, drivers, seed=None if seed is None else seed + 1)
+	next_prediction = predict_season(
+		teams=projected_teams,
+		drivers=projected_drivers,
+		calendar=calendar,
+		simulations=simulations,
+		seed=None if seed is None else seed + 2,
+	)
+
+	return current_prediction, next_prediction

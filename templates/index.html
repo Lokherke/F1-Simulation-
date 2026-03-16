@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>F1 Championship Forecast</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <header class="hero reveal">
+    <p class="kicker">F1 Championship Predictor</p>
+    <h1>Driver + Constructor Forecast Lab</h1>
+    <p class="sub">Engine power, aero, chassis balance, reliability, strategy, pit stops, weather volatility, incidents, and development trends combined in a Monte Carlo model.</p>
+  </header>
+
+  <section class="panel reveal" style="--delay: 0.08s;">
+    <form method="post" class="controls">
+      <label>
+        Simulations
+        <input type="number" name="simulations" min="200" step="100" value="{{ simulations }}">
+      </label>
+      <label>
+        Seed
+        <input type="number" name="seed" value="{{ seed }}">
+      </label>
+      <label>
+        Rows to show
+        <input type="number" name="top" min="3" max="20" value="{{ top }}">
+      </label>
+      <button type="submit">Run Forecast</button>
+    </form>
+  </section>
+
+  <main class="layout">
+    <section class="season-card reveal" style="--delay: 0.14s;">
+      <h2>Current Season</h2>
+      <div class="champions">
+        <article>
+          <span>Driver Champion</span>
+          <strong>{{ current.champion_driver }}</strong>
+        </article>
+        <article>
+          <span>Constructor Champion</span>
+          <strong>{{ current.champion_constructor }}</strong>
+        </article>
+      </div>
+      <div class="tables">
+        <div class="table-block">
+          <h3>Driver Title Probability</h3>
+          <ul>
+            {% for rank, name, probability in current.driver_probabilities %}
+            <li>
+              <span class="rank">{{ rank }}</span>
+              <span class="name">{{ name }}</span>
+              <span class="value">{{ '%.2f'|format(probability) }}%</span>
+              <span class="bar" style="--w: {{ probability }}%;"></span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="table-block">
+          <h3>Constructor Title Probability</h3>
+          <ul>
+            {% for rank, name, probability in current.constructor_probabilities %}
+            <li>
+              <span class="rank">{{ rank }}</span>
+              <span class="name">{{ name }}</span>
+              <span class="value">{{ '%.2f'|format(probability) }}%</span>
+              <span class="bar" style="--w: {{ probability }}%;"></span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="table-block">
+          <h3>Expected Driver Points</h3>
+          <ul>
+            {% for rank, name, points in current.driver_points %}
+            <li>
+              <span class="rank">{{ rank }}</span>
+              <span class="name">{{ name }}</span>
+              <span class="value">{{ '%.1f'|format(points) }} pts</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="table-block">
+          <h3>Expected Constructor Points</h3>
+          <ul>
+            {% for rank, name, points in current.constructor_points %}
+            <li>
+              <span class="rank">{{ rank }}</span>
+              <span class="name">{{ name }}</span>
+              <span class="value">{{ '%.1f'|format(points) }} pts</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="season-card reveal" style="--delay: 0.22s;">
+      <h2>Next Season Projection</h2>
+      <div class="champions">
+        <article>
+          <span>Driver Champion</span>
+          <strong>{{ next_season.champion_driver }}</strong>
+        </article>
+        <article>
+          <span>Constructor Champion</span>
+          <strong>{{ next_season.champion_constructor }}</strong>
+        </article>
+      </div>
+      <div class="tables">
+        <div class="table-block">
+          <h3>Driver Title Probability</h3>
+          <ul>
+            {% for rank, name, probability in next_season.driver_probabilities %}
+            <li>
+              <span class="rank">{{ rank }}</span>
+              <span class="name">{{ name }}</span>
+              <span class="value">{{ '%.2f'|format(probability) }}%</span>
+              <span class="bar" style="--w: {{ probability }}%;"></span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="table-block">
+          <h3>Constructor Title Probability</h3>
+          <ul>
+            {% for rank, name, probability in next_season.constructor_probabilities %}
+            <li>
+              <span class="rank">{{ rank }}</span>
+              <span class="name">{{ name }}</span>
+              <span class="value">{{ '%.2f'|format(probability) }}%</span>
+              <span class="bar" style="--w: {{ probability }}%;"></span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="table-block">
+          <h3>Expected Driver Points</h3>
+          <ul>
+            {% for rank, name, points in next_season.driver_points %}
+            <li>
+              <span class="rank">{{ rank }}</span>
+              <span class="name">{{ name }}</span>
+              <span class="value">{{ '%.1f'|format(points) }} pts</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="table-block">
+          <h3>Expected Constructor Points</h3>
+          <ul>
+            {% for rank, name, points in next_season.constructor_points %}
+            <li>
+              <span class="rank">{{ rank }}</span>
+              <span class="name">{{ name }}</span>
+              <span class="value">{{ '%.1f'|format(points) }} pts</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
