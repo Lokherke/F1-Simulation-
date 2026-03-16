@@ -1,11 +1,15 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from dataclasses import dataclass
+import hashlib
+from pathlib import Path
 from typing import Dict, List, Tuple
 import random
 
 
 POINTS_TABLE = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
+FASTF1_CACHE_DIR = Path(__file__).resolve().parent / ".fastf1_cache"
 
 
 @dataclass(frozen=True)
@@ -57,6 +61,191 @@ class SeasonPrediction:
 
 def _clamp(value: float, minimum: float = 0.0, maximum: float = 100.0) -> float:
 	return max(minimum, min(maximum, value))
+
+
+def _stable_uniform(key: str, minimum: float, maximum: float) -> float:
+	digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+	ratio = int(digest[:16], 16) / float(16**16 - 1)
+	return minimum + (maximum - minimum) * ratio
+
+
+def _safe_float(value: object, default: float = 0.0) -> float:
+	try:
+		parsed = float(value)
+		if parsed != parsed:
+			return default
+		return parsed
+	except (TypeError, ValueError):
+		return default
+
+
+def _safe_int(value: object, default: int = 20) -> int:
+	try:
+		parsed = int(float(value))
+		if parsed <= 0:
+			return default
+		return parsed
+	except (TypeError, ValueError):
+		return default
+
+
+def _normalize(values: Dict[str, float]) -> Dict[str, float]:
+	if not values:
+		return {}
+	minimum = min(values.values())
+	maximum = max(values.values())
+	spread = maximum - minimum
+	if spread <= 1e-9:
+		return {name: 0.5 for name in values}
+	return {name: (value - minimum) / spread for name, value in values.items()}
+
+
+def _build_track_profile_from_event(event_name: str, round_number: int) -> TrackProfile:
+	key = f"{event_name}-{round_number}"
+	return TrackProfile(
+		name=event_name,
+		power_sensitivity=_stable_uniform(f"{key}-power", 0.44, 0.96),
+		aero_sensitivity=_stable_uniform(f"{key}-aero", 0.45, 0.92),
+		grip_sensitivity=_stable_uniform(f"{key}-grip", 0.54, 0.89),
+		overtaking_difficulty=_stable_uniform(f"{key}-ot", 0.33, 0.94),
+		weather_volatility=_stable_uniform(f"{key}-wx", 0.16, 0.52),
+	)
+
+
+def _load_fastf1_grid_and_calendar(season_year: int | None = None) -> Tuple[List[Team], List[Driver], List[TrackProfile], int]:
+	import fastf1
+
+	fastf1.Cache.enable_cache(str(FASTF1_CACHE_DIR))
+
+	current_year = datetime.now(timezone.utc).year
+	candidate_years = [season_year] if season_year is not None else [current_year, current_year - 1, current_year - 2, current_year - 3]
+	today = datetime.now(timezone.utc).date()
+	last_error: Exception | None = None
+
+	for year in candidate_years:
+		try:
+			schedule = fastf1.get_event_schedule(year, include_testing=False)
+		except Exception as exc:  # pragma: no cover - external dependency/network failures
+			last_error = exc
+			continue
+
+		if schedule is None or len(schedule) == 0:
+			continue
+
+		calendar: List[TrackProfile] = []
+		completed_rounds: List[int] = []
+		for _, event in schedule.iterrows():
+			round_number = _safe_int(event.get("RoundNumber"), default=0)
+			if round_number <= 0:
+				continue
+			event_name = str(event.get("EventName") or f"Round {round_number}").strip()
+			calendar.append(_build_track_profile_from_event(event_name, round_number))
+
+			event_date = event.get("EventDate")
+			event_day = event_date.date() if hasattr(event_date, "date") else None
+			if event_day is None or event_day <= today:
+				completed_rounds.append(round_number)
+
+		if not completed_rounds or not calendar:
+			continue
+
+		driver_points: Dict[str, float] = {}
+		driver_finish_sum: Dict[str, float] = {}
+		driver_finish_count: Dict[str, int] = {}
+		driver_team: Dict[str, str] = {}
+		team_points: Dict[str, float] = {}
+		team_finish_sum: Dict[str, float] = {}
+		team_finish_count: Dict[str, int] = {}
+		loaded_rounds = 0
+
+		for round_number in completed_rounds:
+			try:
+				race = fastf1.get_session(year, round_number, "R")
+				race.load(laps=False, telemetry=False, weather=False, messages=False)
+				results = race.results
+			except Exception:  # pragma: no cover - external dependency/network failures
+				continue
+
+			if results is None or len(results) == 0:
+				continue
+
+			loaded_rounds += 1
+			for _, row in results.iterrows():
+				driver_name = str(row.get("FullName") or row.get("BroadcastName") or row.get("Abbreviation") or "").strip()
+				team_name = str(row.get("TeamName") or "").strip()
+				if not driver_name or not team_name:
+					continue
+
+				points = _safe_float(row.get("Points"), default=0.0)
+				finish_position = _safe_int(row.get("Position"), default=20)
+
+				driver_points[driver_name] = driver_points.get(driver_name, 0.0) + points
+				driver_finish_sum[driver_name] = driver_finish_sum.get(driver_name, 0.0) + finish_position
+				driver_finish_count[driver_name] = driver_finish_count.get(driver_name, 0) + 1
+				driver_team[driver_name] = team_name
+
+				team_points[team_name] = team_points.get(team_name, 0.0) + points
+				team_finish_sum[team_name] = team_finish_sum.get(team_name, 0.0) + finish_position
+				team_finish_count[team_name] = team_finish_count.get(team_name, 0) + 1
+
+		if loaded_rounds == 0 or not team_points or not driver_points:
+			continue
+
+		team_norm_points = _normalize(team_points)
+		driver_norm_points = _normalize(driver_points)
+
+		teams: List[Team] = []
+		for team_name, points in sorted(team_points.items(), key=lambda entry: entry[1], reverse=True):
+			avg_finish = team_finish_sum[team_name] / max(1, team_finish_count[team_name])
+			form = 0.70 * team_norm_points[team_name] + 0.30 * _clamp((20.0 - avg_finish) / 19.0, 0.0, 1.0)
+			base = _clamp(70.0 + form * 26.0)
+			teams.append(
+				Team(
+					name=team_name,
+					engine_performance=_clamp(base + _stable_uniform(f"{team_name}-engine", -4.0, 4.0)),
+					aero_efficiency=_clamp(base + _stable_uniform(f"{team_name}-aero", -4.5, 4.5)),
+					chassis_balance=_clamp(base + _stable_uniform(f"{team_name}-chassis", -3.5, 4.0)),
+					mechanical_grip=_clamp(base + _stable_uniform(f"{team_name}-grip", -3.0, 4.0)),
+					reliability=_clamp(base + _stable_uniform(f"{team_name}-rel", -3.5, 5.0)),
+					pit_stop_efficiency=_clamp(base + _stable_uniform(f"{team_name}-pit", -4.0, 3.5)),
+					strategy_quality=_clamp(base + _stable_uniform(f"{team_name}-strat", -4.0, 3.5)),
+					tire_management=_clamp(base + _stable_uniform(f"{team_name}-tire", -3.5, 4.0)),
+					development_rate=_clamp(base + _stable_uniform(f"{team_name}-dev", -3.0, 4.0)),
+					regulation_adaptability=_clamp(base + _stable_uniform(f"{team_name}-reg", -3.0, 4.0)),
+				)
+			)
+
+		team_strength = {team.name: (team.engine_performance + team.aero_efficiency + team.chassis_balance) / 3.0 for team in teams}
+		drivers: List[Driver] = []
+		for driver_name, points in sorted(driver_points.items(), key=lambda entry: entry[1], reverse=True):
+			team_name = driver_team.get(driver_name)
+			if not team_name:
+				continue
+
+			avg_finish = driver_finish_sum[driver_name] / max(1, driver_finish_count[driver_name])
+			driver_form = 0.72 * driver_norm_points[driver_name] + 0.28 * _clamp((20.0 - avg_finish) / 19.0, 0.0, 1.0)
+			team_factor = _clamp((team_strength.get(team_name, 80.0) - 75.0) / 25.0, 0.0, 1.0)
+			base = _clamp(68.0 + driver_form * 24.0 + team_factor * 4.0)
+			drivers.append(
+				Driver(
+					name=driver_name,
+					team=team_name,
+					pace=_clamp(base + _stable_uniform(f"{driver_name}-pace", -3.5, 4.0)),
+					consistency=_clamp(base + _stable_uniform(f"{driver_name}-cons", -3.5, 4.0)),
+					racecraft=_clamp(base + _stable_uniform(f"{driver_name}-rc", -3.0, 4.0)),
+					wet_skill=_clamp(base + _stable_uniform(f"{driver_name}-wet", -4.5, 4.5)),
+					tire_feedback=_clamp(base + _stable_uniform(f"{driver_name}-tire", -3.0, 3.5)),
+					adaptability=_clamp(base + _stable_uniform(f"{driver_name}-adp", -3.0, 3.5)),
+				)
+			)
+
+		if teams and drivers:
+			return teams, drivers, calendar, year
+
+	error_message = "Unable to load real F1 data with FastF1."
+	if last_error is not None:
+		error_message = f"{error_message} Last error: {last_error}"
+	raise RuntimeError(error_message)
 
 
 def build_default_grid() -> Tuple[List[Team], List[Driver]]:
@@ -332,9 +521,13 @@ def project_next_season(
 def predict_current_and_next_season(
 	simulations: int = 2000,
 	seed: int | None = None,
+	season_year: int | None = None,
 ) -> Tuple[SeasonPrediction, SeasonPrediction]:
-	teams, drivers = build_default_grid()
-	calendar = build_default_calendar()
+	try:
+		teams, drivers, calendar, _ = _load_fastf1_grid_and_calendar(season_year=season_year)
+	except Exception:
+		teams, drivers = build_default_grid()
+		calendar = build_default_calendar()
 
 	current_prediction = predict_season(
 		teams=teams,

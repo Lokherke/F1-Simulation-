@@ -1,6 +1,6 @@
 # F1-Simulation-
 
-Predicts F1 Driver and Constructor champions using a multi-factor Monte Carlo model.
+Predicts F1 Driver and Constructor champions using a multi-factor Monte Carlo model fed by real F1 data from FastF1.
 
 ## What This Software Predicts
 
@@ -30,6 +30,7 @@ The simulator combines technical and external race factors:
 
 ## How It Works
 
+- Loads real race results, drivers, teams, and calendar from FastF1
 - Simulates each race on a calendar with track-specific characteristics
 - Applies weather and randomness for realistic race variability
 - Scores each driver-team pairing for every race
@@ -80,6 +81,13 @@ Dashboard features:
 - Current season champion and standings forecast
 - Next season projected champion and standings forecast
 - Visual probability bars for title outcomes
+
+## Data Source
+
+- Primary source: FastF1 (real F1 schedule and race results)
+- The simulator auto-selects the most recent season that has available completed race results
+- FastF1 cache is stored in `.fastf1_cache/` to speed up subsequent runs
+- If FastF1 data is temporarily unavailable, the app falls back to built-in sample data
 
 ## Files
 
