@@ -115,6 +115,7 @@ def _build_track_profile_from_event(event_name: str, round_number: int) -> Track
 def _load_fastf1_grid_and_calendar(season_year: int | None = None) -> Tuple[List[Team], List[Driver], List[TrackProfile], int]:
 	import fastf1
 
+	FASTF1_CACHE_DIR.mkdir(parents=True, exist_ok=True)
 	fastf1.Cache.enable_cache(str(FASTF1_CACHE_DIR))
 
 	current_year = datetime.now(timezone.utc).year
