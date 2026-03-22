@@ -59,6 +59,27 @@ class SeasonPrediction:
 	expected_constructor_points: Dict[str, float]
 
 
+@dataclass(frozen=True)
+class SimulationConfig:
+	qualifying_weight: float = 0.28
+	safety_car_rate: float = 0.26
+	tire_degradation_impact: float = 0.32
+	reliability_sensitivity: float = 0.30
+	chaos_level: float = 0.35
+
+
+def _sanitize_config(config: SimulationConfig | None) -> SimulationConfig:
+	if config is None:
+		return SimulationConfig()
+	return SimulationConfig(
+		qualifying_weight=_clamp(config.qualifying_weight, 0.0, 1.0),
+		safety_car_rate=_clamp(config.safety_car_rate, 0.0, 1.0),
+		tire_degradation_impact=_clamp(config.tire_degradation_impact, 0.0, 1.0),
+		reliability_sensitivity=_clamp(config.reliability_sensitivity, 0.0, 1.0),
+		chaos_level=_clamp(config.chaos_level, 0.0, 1.0),
+	)
+
+
 def _clamp(value: float, minimum: float = 0.0, maximum: float = 100.0) -> float:
 	return max(minimum, min(maximum, value))
 
@@ -327,6 +348,9 @@ def _performance_score(
 	team: Team,
 	track: TrackProfile,
 	weather_index: float,
+	safety_car_factor: float,
+	qualifying_advantage: float,
+	config: SimulationConfig,
 	rng: random.Random,
 ) -> float:
 	# Technical package score by circuit profile.
@@ -355,31 +379,83 @@ def _performance_score(
 		+ team.pit_stop_efficiency * (0.45 - 0.05 * weather_index)
 	)
 
+	# Tire degradation pressure at high-energy tracks, partially offset by team/driver tire quality.
+	tire_wear_pressure = (track.grip_sensitivity * 0.7 + track.aero_sensitivity * 0.3) * (0.45 + weather_index * 0.2)
+	tire_wear_resistance = (team.tire_management * 0.65 + driver.tire_feedback * 0.35) / 100
+	tire_penalty = config.tire_degradation_impact * max(0.0, tire_wear_pressure - tire_wear_resistance) * 9.0
+
 	# Reliability and incident model.
-	dnf_probability = _clamp(18 - team.reliability * 0.14 - driver.consistency * 0.07, 1.5, 12.0) / 100
+	dnf_probability = _clamp(
+		18 - team.reliability * (0.14 + config.reliability_sensitivity * 0.08) - driver.consistency * 0.07,
+		1.5,
+		12.0 + config.chaos_level * 4.0,
+	) / 100
 	if rng.random() < dnf_probability:
 		return -200.0
 
 	incident_penalty = 0.0
-	if rng.random() < (0.04 + weather_index * 0.06):
-		incident_penalty = rng.uniform(6.0, 16.0)
+	incident_threshold = 0.04 + weather_index * 0.06 + config.chaos_level * 0.05 + safety_car_factor * 0.03
+	if rng.random() < incident_threshold:
+		incident_penalty = rng.uniform(6.0, 16.0 + config.chaos_level * 7.0)
 
-	randomness = rng.gauss(0, 3.2 + weather_index * 2.4)
-	return car_score * 0.50 + driver_score * 0.34 + operations_score * 0.16 + randomness - incident_penalty
+	randomness = rng.gauss(0, 3.2 + weather_index * 2.4 + config.chaos_level * 2.2 + safety_car_factor * 1.4)
+	qualifying_bonus = qualifying_advantage * (2.8 + config.qualifying_weight * 7.0)
+	safety_car_strategy = (team.strategy_quality - 50.0) / 50.0 * safety_car_factor * 3.0
+	return (
+		car_score * 0.50
+		+ driver_score * 0.34
+		+ operations_score * 0.16
+		+ randomness
+		+ qualifying_bonus
+		+ safety_car_strategy
+		- incident_penalty
+		- tire_penalty
+	)
 
 
 def _simulate_single_race(
 	drivers: List[Driver],
 	team_map: Dict[str, Team],
 	track: TrackProfile,
+	config: SimulationConfig,
 	rng: random.Random,
 ) -> List[Tuple[str, str, float]]:
 	weather_index = _weather_index(track, rng)
+	safety_car_factor = 1.0 if rng.random() < (config.safety_car_rate * (0.45 + track.weather_volatility)) else 0.0
+
+	qualifying_scores: List[Tuple[str, float]] = []
+	for driver in drivers:
+		team = team_map[driver.team]
+		q_score = (
+			driver.pace * 0.52
+			+ driver.adaptability * 0.12
+			+ team.engine_performance * track.power_sensitivity * 0.18
+			+ team.aero_efficiency * track.aero_sensitivity * 0.18
+			+ rng.gauss(0, 2.1)
+		)
+		qualifying_scores.append((driver.name, q_score))
+
+	qualifying_scores.sort(key=lambda entry: entry[1], reverse=True)
+	grid_advantage_map: Dict[str, float] = {}
+	field_size = max(1, len(qualifying_scores) - 1)
+	for grid_position, (driver_name, _) in enumerate(qualifying_scores):
+		relative = 1.0 - (grid_position / field_size)
+		grid_advantage_map[driver_name] = (relative - 0.5) * config.qualifying_weight
+
 	race_scores: List[Tuple[str, str, float]] = []
 
 	for driver in drivers:
 		team = team_map[driver.team]
-		score = _performance_score(driver, team, track, weather_index, rng)
+		score = _performance_score(
+			driver=driver,
+			team=team,
+			track=track,
+			weather_index=weather_index,
+			safety_car_factor=safety_car_factor,
+			qualifying_advantage=grid_advantage_map.get(driver.name, 0.0),
+			config=config,
+			rng=rng,
+		)
 		race_scores.append((driver.name, driver.team, score))
 
 	race_scores.sort(key=lambda entry: entry[2], reverse=True)
@@ -390,6 +466,7 @@ def _simulate_season_once(
 	teams: List[Team],
 	drivers: List[Driver],
 	calendar: List[TrackProfile],
+	config: SimulationConfig,
 	rng: random.Random,
 ) -> Tuple[Dict[str, int], Dict[str, int]]:
 	team_map = {team.name: team for team in teams}
@@ -397,7 +474,7 @@ def _simulate_season_once(
 	constructor_points = {team.name: 0 for team in teams}
 
 	for track in calendar:
-		result = _simulate_single_race(drivers, team_map, track, rng)
+		result = _simulate_single_race(drivers, team_map, track, config, rng)
 		for idx, (driver_name, team_name, score) in enumerate(result):
 			if idx < len(POINTS_TABLE) and score > -150:
 				points = POINTS_TABLE[idx]
@@ -421,15 +498,23 @@ def predict_season(
 	calendar: List[TrackProfile],
 	simulations: int = 2000,
 	seed: int | None = None,
+	config: SimulationConfig | None = None,
 ) -> SeasonPrediction:
 	rng = random.Random(seed)
+	simulation_config = _sanitize_config(config)
 	driver_title_wins = {driver.name: 0 for driver in drivers}
 	constructor_title_wins = {team.name: 0 for team in teams}
 	total_driver_points = {driver.name: 0 for driver in drivers}
 	total_constructor_points = {team.name: 0 for team in teams}
 
 	for _ in range(simulations):
-		driver_points, constructor_points = _simulate_season_once(teams, drivers, calendar, rng)
+		driver_points, constructor_points = _simulate_season_once(
+			teams=teams,
+			drivers=drivers,
+			calendar=calendar,
+			config=simulation_config,
+			rng=rng,
+		)
 
 		for name, points in driver_points.items():
 			total_driver_points[name] += points
@@ -523,7 +608,22 @@ def predict_current_and_next_season(
 	simulations: int = 2000,
 	seed: int | None = None,
 	season_year: int | None = None,
+	qualifying_weight: float = 0.28,
+	safety_car_rate: float = 0.26,
+	tire_degradation_impact: float = 0.32,
+	reliability_sensitivity: float = 0.30,
+	chaos_level: float = 0.35,
 ) -> Tuple[SeasonPrediction, SeasonPrediction]:
+	config = _sanitize_config(
+		SimulationConfig(
+			qualifying_weight=qualifying_weight,
+			safety_car_rate=safety_car_rate,
+			tire_degradation_impact=tire_degradation_impact,
+			reliability_sensitivity=reliability_sensitivity,
+			chaos_level=chaos_level,
+		)
+	)
+
 	try:
 		teams, drivers, calendar, _ = _load_fastf1_grid_and_calendar(season_year=season_year)
 	except Exception:
@@ -536,6 +636,7 @@ def predict_current_and_next_season(
 		calendar=calendar,
 		simulations=simulations,
 		seed=seed,
+		config=config,
 	)
 
 	projected_teams, projected_drivers = project_next_season(teams, drivers, seed=None if seed is None else seed + 1)
@@ -545,6 +646,7 @@ def predict_current_and_next_season(
 		calendar=calendar,
 		simulations=simulations,
 		seed=None if seed is None else seed + 2,
+		config=config,
 	)
 
 	return current_prediction, next_prediction

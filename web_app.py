@@ -41,15 +41,34 @@ def index() -> str:
     simulations = 3000
     seed = 42
     top = 8
+    year: int | None = None
+    qualifying_weight = 0.28
+    safety_car_rate = 0.26
+    tire_impact = 0.32
+    reliability_sensitivity = 0.30
+    chaos_level = 0.35
 
     if request.method == "POST":
         simulations = max(200, int(request.form.get("simulations", simulations)))
         seed = int(request.form.get("seed", seed))
         top = max(3, min(20, int(request.form.get("top", top))))
+        year_raw = request.form.get("year", "").strip()
+        year = int(year_raw) if year_raw else None
+        qualifying_weight = max(0.0, min(1.0, float(request.form.get("qualifying_weight", qualifying_weight))))
+        safety_car_rate = max(0.0, min(1.0, float(request.form.get("safety_car_rate", safety_car_rate))))
+        tire_impact = max(0.0, min(1.0, float(request.form.get("tire_impact", tire_impact))))
+        reliability_sensitivity = max(0.0, min(1.0, float(request.form.get("reliability_sensitivity", reliability_sensitivity))))
+        chaos_level = max(0.0, min(1.0, float(request.form.get("chaos_level", chaos_level))))
 
     current_prediction, next_prediction = predict_current_and_next_season(
         simulations=simulations,
         seed=seed,
+        season_year=year,
+        qualifying_weight=qualifying_weight,
+        safety_car_rate=safety_car_rate,
+        tire_degradation_impact=tire_impact,
+        reliability_sensitivity=reliability_sensitivity,
+        chaos_level=chaos_level,
     )
 
     return render_template(
@@ -57,6 +76,12 @@ def index() -> str:
         simulations=simulations,
         seed=seed,
         top=top,
+        year="" if year is None else year,
+        qualifying_weight=qualifying_weight,
+        safety_car_rate=safety_car_rate,
+        tire_impact=tire_impact,
+        reliability_sensitivity=reliability_sensitivity,
+        chaos_level=chaos_level,
         current=_prediction_view_model(current_prediction, top),
         next_season=_prediction_view_model(next_prediction, top),
     )

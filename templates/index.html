@@ -14,7 +14,7 @@
   <header class="hero reveal">
     <p class="kicker">F1 Championship Predictor</p>
     <h1>Driver + Constructor Forecast Lab</h1>
-    <p class="sub">Engine power, aero, chassis balance, reliability, strategy, pit stops, weather volatility, incidents, and development trends combined in a Monte Carlo model.</p>
+    <p class="sub">Engine power, aero, chassis balance, reliability, strategy, pit stops, weather volatility, incidents, development trends, qualifying influence, safety-car disruptions, and tire degradation combined in a Monte Carlo model.</p>
   </header>
 
   <section class="panel reveal" style="--delay: 0.08s;">
@@ -30,6 +30,30 @@
       <label>
         Rows to show
         <input type="number" name="top" min="3" max="20" value="{{ top }}">
+      </label>
+      <label>
+        Season year (optional)
+        <input type="number" name="year" min="2018" max="2100" value="{{ year }}" placeholder="Auto latest">
+      </label>
+      <label>
+        Qualifying weight (0-1)
+        <input type="number" name="qualifying_weight" min="0" max="1" step="0.01" value="{{ qualifying_weight }}">
+      </label>
+      <label>
+        Safety-car rate (0-1)
+        <input type="number" name="safety_car_rate" min="0" max="1" step="0.01" value="{{ safety_car_rate }}">
+      </label>
+      <label>
+        Tire degradation impact (0-1)
+        <input type="number" name="tire_impact" min="0" max="1" step="0.01" value="{{ tire_impact }}">
+      </label>
+      <label>
+        Reliability sensitivity (0-1)
+        <input type="number" name="reliability_sensitivity" min="0" max="1" step="0.01" value="{{ reliability_sensitivity }}">
+      </label>
+      <label>
+        Chaos level (0-1)
+        <input type="number" name="chaos_level" min="0" max="1" step="0.01" value="{{ chaos_level }}">
       </label>
       <button type="submit">Run Forecast</button>
     </form>

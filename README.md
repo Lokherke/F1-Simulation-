@@ -27,6 +27,10 @@ The simulator combines technical and external race factors:
 - Incident probability
 - Team development rate
 - Regulation adaptability (used for next-season projection)
+- Qualifying position influence on race outcome
+- Safety-car disruption effects
+- Tire degradation pressure versus tire management
+- Reliability sensitivity tuning and global chaos level
 
 ## How It Works
 
@@ -51,9 +55,21 @@ Optional arguments:
 python main.py --simulations 5000 --seed 7 --top 8
 ```
 
+Advanced options:
+
+```bash
+python main.py --year 2025 --qualifying-weight 0.35 --safety-car-rate 0.30 --tire-impact 0.40 --reliability-sensitivity 0.45 --chaos-level 0.50
+```
+
 - `--simulations`: number of simulated seasons (minimum effective floor: 200)
 - `--seed`: random seed for reproducible results
 - `--top`: how many top rows to display in each summary table
+- `--year`: explicit season year to load from FastF1 (default: latest available)
+- `--qualifying-weight`: grid-position impact on race performance (0.0 to 1.0)
+- `--safety-car-rate`: frequency of safety-car style disruptions (0.0 to 1.0)
+- `--tire-impact`: tire degradation influence (0.0 to 1.0)
+- `--reliability-sensitivity`: reliability impact on DNF risk (0.0 to 1.0)
+- `--chaos-level`: randomness and incident intensity (0.0 to 1.0)
 
 ## Web Dashboard
 
@@ -78,6 +94,7 @@ http://127.0.0.1:8000
 Dashboard features:
 
 - Interactive controls for simulations, seed, and table length
+- Season year selector and advanced factor controls
 - Current season champion and standings forecast
 - Next season projected champion and standings forecast
 - Visual probability bars for title outcomes

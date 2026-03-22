@@ -58,16 +58,58 @@ def main() -> None:
 		default=5,
 		help="How many top rows to display per table (default: 5)",
 	)
+	parser.add_argument(
+		"--year",
+		type=int,
+		default=None,
+		help="Season year to load from FastF1 (default: auto latest available)",
+	)
+	parser.add_argument(
+		"--qualifying-weight",
+		type=float,
+		default=0.28,
+		help="Grid-position influence on race pace (0.0 to 1.0, default: 0.28)",
+	)
+	parser.add_argument(
+		"--safety-car-rate",
+		type=float,
+		default=0.26,
+		help="How often safety-car style disruptions occur (0.0 to 1.0, default: 0.26)",
+	)
+	parser.add_argument(
+		"--tire-impact",
+		type=float,
+		default=0.32,
+		help="How much tire degradation changes outcomes (0.0 to 1.0, default: 0.32)",
+	)
+	parser.add_argument(
+		"--reliability-sensitivity",
+		type=float,
+		default=0.30,
+		help="How strongly reliability affects DNF probability (0.0 to 1.0, default: 0.30)",
+	)
+	parser.add_argument(
+		"--chaos-level",
+		type=float,
+		default=0.35,
+		help="Randomness and incident intensity (0.0 to 1.0, default: 0.35)",
+	)
 
 	args = parser.parse_args()
 
 	current_prediction, next_prediction = predict_current_and_next_season(
 		simulations=max(200, args.simulations),
 		seed=args.seed,
+		season_year=args.year,
+		qualifying_weight=args.qualifying_weight,
+		safety_car_rate=args.safety_car_rate,
+		tire_degradation_impact=args.tire_impact,
+		reliability_sensitivity=args.reliability_sensitivity,
+		chaos_level=args.chaos_level,
 	)
 
 	print("F1 Championship Predictor")
-	print("Model factors: engine, aero, chassis, grip, reliability, strategy, pit stop, weather, incidents, and development trend.")
+	print("Model factors: engine, aero, chassis, grip, reliability, strategy, pit stop, weather, incidents, development trend, qualifying influence, safety-car disruptions, and tire degradation.")
 
 	_print_prediction("Current Season Forecast", current_prediction, top_n=max(1, args.top))
 	_print_prediction("Next Season Forecast", next_prediction, top_n=max(1, args.top))
