@@ -461,9 +461,12 @@ h3 {
 
 /* Tables */
 .tables {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
   gap: 1.5rem;
+  flex-wrap: wrap;
+  min-height: 400px;
 }
 
 .table-block {
@@ -472,6 +475,67 @@ h3 {
   padding: 1.2rem;
   background: rgba(30, 41, 59, 0.4);
   transition: all 0.3s ease;
+  flex: 1;
+  min-width: 280px;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+/* Podium styling based on position */
+.table-block:nth-child(1) {
+  order: 2;
+  transform: translateY(0);
+  border-color: #ffd700;
+  background: rgba(30, 41, 59, 0.6);
+  box-shadow: 0 0 30px rgba(255, 215, 0, 0.3), inset 0 0 20px rgba(255, 215, 0, 0.1);
+  min-height: 450px;
+}
+
+.table-block:nth-child(2) {
+  order: 1;
+  transform: translateY(50px);
+  border-color: #c0c0c0;
+  background: rgba(30, 41, 59, 0.5);
+  box-shadow: 0 0 20px rgba(192, 192, 192, 0.2);
+  min-height: 400px;
+}
+
+.table-block:nth-child(3) {
+  order: 3;
+  transform: translateY(50px);
+  border-color: #cd7f32;
+  background: rgba(30, 41, 59, 0.5);
+  box-shadow: 0 0 20px rgba(205, 127, 50, 0.2);
+  min-height: 400px;
+}
+
+.table-block:nth-child(4) {
+  order: 4;
+  opacity: 0.7;
+  min-width: 200px;
+}
+
+.table-block h3 {
+  margin: 0 0 1rem 0;
+  font-size: 0.95rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.table-block:nth-child(1) h3::before {
+  content: '🥇 ';
+}
+
+.table-block:nth-child(2) h3::before {
+  content: '🥈 ';
+}
+
+.table-block:nth-child(3) h3::before {
+  content: '🥉 ';
 }
 
 .table-block:hover {
@@ -622,7 +686,20 @@ ul {
   }
 
   .tables {
-    grid-template-columns: 1fr;
+    flex-direction: column;
+    min-height: auto;
+    gap: 1.5rem;
+  }
+
+  .table-block {
+    transform: translateY(0) !important;
+    min-height: auto !important;
+    order: initial !important;
+    min-width: auto;
+  }
+
+  .table-block h3::before {
+    content: '' !important;
   }
 
   .card-header {
