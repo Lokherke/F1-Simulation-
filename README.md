@@ -43,10 +43,133 @@ The simulator combines technical and external race factors:
 - Uses aggregated outcomes to estimate champion probabilities
 - Projects team and driver growth/decline into the next season
 
-## Run
+## Run Locally
 
+### Option 1: Quick Start (Windows)
+Double-click `START_F1_SIM.bat` in the project folder. This will:
+- Activate the virtual environment
+- Start the Flask server on `http://localhost:8000`
+- Open the browser automatically
+
+### Option 2: Manual
 ```bash
-python main.py
+# Activate virtual environment
+.venv\Scripts\activate
+
+# Install dependencies (if needed)
+pip install -r requirements.txt
+
+# Run the web app
+python web_app.py
+```
+
+Then open `http://localhost:8000` in your browser.
+
+---
+
+## Deployment (Netlify + Render)
+
+### Deploy Backend to Render
+
+1. Push code to GitHub
+2. Go to [render.com](https://render.com) and create account
+3. Click "New Web Service"
+4. Connect your GitHub repo
+5. Configure:
+   - **Name:** `f1-sim` (or your choice)
+   - **Environment:** Python 3.11
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `gunicorn web_app:app`
+   - **Instance Type:** Free (or Starter)
+6. Deploy
+7. Copy your backend URL (e.g., `https://f1-sim-abc.onrender.com`)
+
+### Deploy Frontend to Netlify
+
+1. Update `public/index.html` line 173:
+   ```javascript
+   const BACKEND_URL = 'https://PASTE-YOUR-RENDER-URL-HERE';
+   ```
+
+2. Go to [netlify.com](https://netlify.com) and create account
+
+3. **Option A: Drag & Drop**
+   - Drag the `public/` folder onto Netlify
+   - Done! Your site is live
+
+4. **Option B: GitHub Auto-Deploy**
+   - Connect your GitHub repo
+   - Choose branch to deploy
+   - Set build command to: `echo 'ready'`
+   - Set publish directory to: `public`
+   - Auto-deploys on each push
+
+### API Endpoints
+
+**Backend URL:** `https://your-render-url.onrender.com`
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/` | GET | Landing page (local dev only) |
+| `/simulation` | GET/POST | Form-based results (local dev only) |
+| `/api/simulation` | POST | JSON API (used by Netlify frontend) |
+
+**POST /api/simulation**
+```json
+{
+  "simulations": 3000,
+  "seed": 42,
+  "top": 8,
+  "year": "",
+  "qualifying_weight": 0.28,
+  "safety_car_rate": 0.26,
+  "tire_impact": 0.32,
+  "reliability_sensitivity": 0.30,
+  "chaos_level": 0.35
+}
+```
+
+Response: Championship predictions with probabilities and expected points
+
+---
+
+### Project Structure
+
+```
+F1-Simulation-/
+├── app.py                    # Core prediction engine
+├── main.py                   # CLI interface
+├── web_app.py                # Flask API server (backend)
+├── requirements.txt          # Python dependencies
+├── netlify.toml              # Netlify configuration
+├── START_F1_SIM.bat         # Quick start script (Windows)
+├── public/                   # Static frontend (for Netlify)
+│   ├── index.html           # Frontend with API integration
+│   └── styles.css           # Stylesheet
+├── templates/               # Flask templates (local dev)
+│   ├── landing.html
+│   └── index.html
+├── static/                  # Static assets (local dev)
+│   └── styles.css
+└── README.md
+```
+
+---
+
+### Architecture
+
+**Local Development:**
+```
+Browser → Flask App (localhost:8000) → Predictions
+           ↓
+        templates/ + static/
+```
+
+**Production (Netlify + Render):**
+```
+Browser → Netlify Frontend (netlify.app) → Render Backend (onrender.com)
+          (public/index.html)                 (web_app.py)
+                                              → Predictions
 ```
 
 Optional arguments:
