@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F1 SIM - Racing Championship Forecast</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: #050505;
+      color: white;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .container {
+      min-height: 100vh;
+      background: #050505;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    /* Background with GIF */
+    .background-layer {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .background-gif {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.25;
+      filter: grayscale(0.6);
+      transform: scale(1.05);
+    }
+
+    /* Gradient Overlays */
+    .gradient-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to right, #050505, rgba(5, 5, 5, 0.4), #050505);
+      z-index: 1;
+    }
+
+    .gradient-overlay-bottom {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to top, #050505, transparent, rgba(5, 5, 5, 0.6));
+      z-index: 1;
+    }
+
+    /* Content Layer */
+    .content {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      max-width: 1200px;
+      margin: 0 auto;
+      width: 100%;
+      height: 100%;
+    }
+
+    /* Top Status Bar */
+    .status-bar {
+      position: absolute;
+      top: 3rem;
+      left: 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      animation: slideDown 0.8s ease-out forwards;
+      opacity: 0;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .status-icon {
+      width: 1rem;
+      height: 1rem;
+      color: #dc2626;
+    }
+
+    .status-text {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.4em;
+      text-transform: uppercase;
+      color: #6b7280;
+    }
+
+    .status-divider {
+      width: 1px;
+      height: 0.75rem;
+      background: #18181b;
+    }
+
+    /* Hero Section */
+    .hero {
+      max-width: 50rem;
+      animation: slideInLeft 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      opacity: 0;
+    }
+
+    @keyframes slideInLeft {
+      from {
+        opacity: 0;
+        transform: translateX(-40px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .hero h1 {
+      font-size: clamp(4rem, 12vw, 15rem);
+      font-weight: 900;
+      font-style: italic;
+      letter-spacing: -0.02em;
+      line-height: 0.8;
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+    }
+
+    .hero h1 .highlight {
+      color: #dc2626;
+    }
+
+    .hero-description {
+      max-width: 28rem;
+      animation: fadeIn 0.8s ease forwards;
+      opacity: 0;
+      animation-delay: 0.4s;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .hero-description p {
+      font-size: 0.95rem;
+      font-weight: 300;
+      line-height: 1.6;
+      letter-spacing: 0.02em;
+      color: #a1a1a1;
+      margin-bottom: 1.5rem;
+    }
+
+    .divider {
+      width: 2rem;
+      height: 1px;
+      background: rgba(220, 38, 38, 0.5);
+    }
+
+    /* CTA Section */
+    .cta-section {
+      position: absolute;
+      bottom: 4rem;
+      right: 2rem;
+      text-align: right;
+      animation: slideUp 0.8s ease forwards;
+      opacity: 0;
+      animation-delay: 0.6s;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .cta-text {
+      margin-bottom: 2rem;
+      max-width: 12.5rem;
+      margin-left: auto;
+    }
+
+    .cta-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #4b5563;
+      margin-bottom: 0.75rem;
+      display: block;
+    }
+
+    .cta-description {
+      font-size: 0.8rem;
+      font-style: italic;
+      font-weight: 300;
+      color: #71717a;
+    }
+
+    .cta-button {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      margin-left: auto;
+      cursor: pointer;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .button-text {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+
+    .button-title {
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      transition: color 0.5s ease;
+    }
+
+    .cta-button:hover .button-title {
+      color: #dc2626;
+    }
+
+    .button-subtitle {
+      font-size: 0.5rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #52525b;
+    }
+
+    .button-circle {
+      position: relative;
+      width: 4rem;
+      height: 4rem;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.5s ease;
+    }
+
+    .cta-button:hover .button-circle {
+      border-color: #dc2626;
+      background: #dc2626;
+    }
+
+    .button-icon {
+      width: 1.5rem;
+      height: 1.5rem;
+      transition: transform 0.3s ease;
+    }
+
+    .cta-button:hover .button-icon {
+      transform: translateX(0.25rem);
+    }
+
+    .pulse-ring {
+      position: absolute;
+      inset: 0;
+      border: 1px solid transparent;
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(1);
+        opacity: 0;
+      }
+      50% {
+        opacity: 0.3;
+      }
+      100% {
+        transform: scale(1.3);
+        opacity: 0;
+      }
+    }
+
+    .cta-button:hover .pulse-ring {
+      border-color: #dc2626;
+    }
+
+    /* Background Number Accent */
+    .accent-number {
+      position: absolute;
+      left: 3rem;
+      bottom: 3rem;
+      font-size: 20rem;
+      font-weight: 900;
+      font-style: italic;
+      opacity: 0.02;
+      pointer-events: none;
+      line-height: 1;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .status-bar {
+        left: 1rem;
+        top: 2rem;
+        font-size: 0.8rem;
+      }
+
+      .hero h1 {
+        font-size: clamp(2rem, 8vw, 5rem);
+      }
+
+      .cta-section {
+        bottom: 2rem;
+        right: 1rem;
+      }
+
+      .accent-number {
+        font-size: 10rem;
+        left: 1rem;
+        bottom: 1rem;
+      }
+
+      .container {
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Background Layer -->
+    <div class="background-layer">
+      <img 
+        src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJqZndqZndqZndqZndqZndqZndqZndqZndqZndqZndqZndqJmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1n/3o7TKMGpxNfQC9A4iA/giphy.gif"
+        alt="F1 Racing"
+        class="background-gif"
+        referrerPolicy="no-referrer"
+      >
+      <div class="gradient-overlay"></div>
+      <div class="gradient-overlay-bottom"></div>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-item">
+          <i class="fas fa-gauge-high status-icon"></i>
+          <span class="status-text">Live Telemetry</span>
+        </div>
+        <div class="status-divider"></div>
+        <div class="status-item">
+          <i class="fas fa-trophy status-icon" style="color: #52525b;"></i>
+          <span class="status-text">Podium Ready</span>
+        </div>
+      </div>
+
+      <!-- Hero Section -->
+      <div class="hero">
+        <h1>F1 <span class="highlight">SIM</span></h1>
+        <div class="hero-description">
+          <p>The ultimate pursuit of speed. Master every corner with millisecond precision in the world's most immersive racing environment.</p>
+          <div class="divider"></div>
+        </div>
+      </div>
+
+      <!-- CTA Section -->
+      <div class="cta-section">
+        <div class="cta-text">
+          <span class="cta-label">Championship Entry</span>
+          <p class="cta-description">Join the grid and compete against the world's fastest drivers.</p>
+        </div>
+        <a href="/simulation" class="cta-button">
+          <div class="button-text">
+            <span class="button-title">Start Engine</span>
+            <span class="button-subtitle">Redirect to Sim</span>
+          </div>
+          <div class="button-circle">
+            <i class="fas fa-chevron-right button-icon"></i>
+            <div class="pulse-ring"></div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Background Accent -->
+      <div class="accent-number">44</div>
+    </div>
+  </div>
+</body>
+</html>

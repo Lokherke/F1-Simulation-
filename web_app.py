@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Dict, List, Tuple
 
 from flask import Flask, render_template, request
@@ -7,7 +8,15 @@ from flask import Flask, render_template, request
 from app import SeasonPrediction, predict_current_and_next_season
 
 
-app = Flask(__name__)
+# Get the directory where this script is located
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, 'templates'),
+    static_folder=os.path.join(BASE_DIR, 'static'),
+    static_url_path='/static'
+)
 
 
 def _top_items(mapping: Dict[str, float], top_n: int) -> List[Tuple[int, str, float]]:
@@ -36,8 +45,13 @@ def _prediction_view_model(prediction: SeasonPrediction, top_n: int) -> Dict[str
     }
 
 
-@app.route("/", methods=["GET", "POST"])
-def index() -> str:
+
+@app.route("/")
+def landing() -> str:
+    """Serve the F1 SIM landing page"""
+    return render_template("landing.html")
+@app.route("/simulation", methods=["GET", "POST"])
+def simulation() -> str:
     simulations = 3000
     seed = 42
     top = 8
@@ -71,8 +85,7 @@ def index() -> str:
         chaos_level=chaos_level,
     )
 
-    return render_template(
-        "index.html",
+    return render_template(\n        "index.html",
         simulations=simulations,
         seed=seed,
         top=top,
@@ -89,3 +102,6 @@ def index() -> str:
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000, debug=True)
+
+
+

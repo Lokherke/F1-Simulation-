@@ -11,99 +11,128 @@
 </head>
 <body>
   <div class="bg-grid"></div>
+  <div class="animated-bg"></div>
+  
   <header class="hero reveal">
-    <p class="kicker">F1 Championship Predictor</p>
-    <h1>Driver + Constructor Forecast Lab</h1>
-    <p class="sub">Engine power, aero, chassis balance, reliability, strategy, pit stops, weather volatility, incidents, development trends, qualifying influence, safety-car disruptions, and tire degradation combined in a Monte Carlo model.</p>
+    <div class="hero-content">
+      <p class="kicker">🏁 F1 Championship Predictor</p>
+      <h1>Driver + Constructor <span class="gradient-text">Forecast Lab</span></h1>
+      <p class="sub">Advanced Monte Carlo simulation combining engine power, aero dynamics, chassis balance, reliability, strategy, and weather volatility for unprecedented championship predictions.</p>
+    </div>
   </header>
 
-  <section class="panel reveal" style="--delay: 0.08s;">
+  <section class="panel panel-controls reveal" style="--delay: 0.08s;">
+    <div class="panel-header">
+      <h2 class="panel-title">Simulation Parameters</h2>
+      <p class="panel-subtitle">Fine-tune your forecast model</p>
+    </div>
     <form method="post" class="controls">
-      <label>
-        Simulations
-        <input type="number" name="simulations" min="200" step="100" value="{{ simulations }}">
+      <label class="input-group">
+        <span class="label-text">Simulations</span>
+        <input type="number" name="simulations" min="200" step="100" value="{{ simulations }}" placeholder="e.g., 3000">
+        <span class="input-hint">Higher = more accurate</span>
       </label>
-      <label>
-        Seed
-        <input type="number" name="seed" value="{{ seed }}">
+      <label class="input-group">
+        <span class="label-text">Seed</span>
+        <input type="number" name="seed" value="{{ seed }}" placeholder="Random seed">
+        <span class="input-hint">Reproducibility</span>
       </label>
-      <label>
-        Rows to show
-        <input type="number" name="top" min="3" max="20" value="{{ top }}">
+      <label class="input-group">
+        <span class="label-text">Rows to show</span>
+        <input type="number" name="top" min="3" max="20" value="{{ top }}" placeholder="3-20">
+        <span class="input-hint">Top results</span>
       </label>
-      <label>
-        Season year (optional)
+      <label class="input-group">
+        <span class="label-text">Season year</span>
         <input type="number" name="year" min="2018" max="2100" value="{{ year }}" placeholder="Auto latest">
+        <span class="input-hint">Optional</span>
       </label>
-      <label>
-        Qualifying weight (0-1)
-        <input type="number" name="qualifying_weight" min="0" max="1" step="0.01" value="{{ qualifying_weight }}">
+      <label class="input-group">
+        <span class="label-text">Qualifying weight</span>
+        <input type="number" name="qualifying_weight" min="0" max="1" step="0.01" value="{{ qualifying_weight }}" placeholder="0.28">
+        <span class="input-hint">0-1 scale</span>
       </label>
-      <label>
-        Safety-car rate (0-1)
-        <input type="number" name="safety_car_rate" min="0" max="1" step="0.01" value="{{ safety_car_rate }}">
+      <label class="input-group">
+        <span class="label-text">Safety-car rate</span>
+        <input type="number" name="safety_car_rate" min="0" max="1" step="0.01" value="{{ safety_car_rate }}" placeholder="0.26">
+        <span class="input-hint">0-1 scale</span>
       </label>
-      <label>
-        Tire degradation impact (0-1)
-        <input type="number" name="tire_impact" min="0" max="1" step="0.01" value="{{ tire_impact }}">
+      <label class="input-group">
+        <span class="label-text">Tire degradation</span>
+        <input type="number" name="tire_impact" min="0" max="1" step="0.01" value="{{ tire_impact }}" placeholder="0.32">
+        <span class="input-hint">0-1 scale</span>
       </label>
-      <label>
-        Reliability sensitivity (0-1)
-        <input type="number" name="reliability_sensitivity" min="0" max="1" step="0.01" value="{{ reliability_sensitivity }}">
+      <label class="input-group">
+        <span class="label-text">Reliability sensitivity</span>
+        <input type="number" name="reliability_sensitivity" min="0" max="1" step="0.01" value="{{ reliability_sensitivity }}" placeholder="0.30">
+        <span class="input-hint">0-1 scale</span>
       </label>
-      <label>
-        Chaos level (0-1)
-        <input type="number" name="chaos_level" min="0" max="1" step="0.01" value="{{ chaos_level }}">
+      <label class="input-group">
+        <span class="label-text">Chaos level</span>
+        <input type="number" name="chaos_level" min="0" max="1" step="0.01" value="{{ chaos_level }}" placeholder="0.35">
+        <span class="input-hint">0-1 scale</span>
       </label>
-      <button type="submit">Run Forecast</button>
+      <button type="submit" class="btn btn-primary">
+        <span>Run Forecast</span>
+        <span class="btn-icon">→</span>
+      </button>
     </form>
   </section>
 
   <main class="layout">
-    <section class="season-card reveal" style="--delay: 0.14s;">
-      <h2>Current Season</h2>
-      <div class="champions">
-        <article>
-          <span>Driver Champion</span>
-          <strong>{{ current.champion_driver }}</strong>
+    <section class="season-card reveal glass-effect" style="--delay: 0.14s;">
+      <div class="card-header">
+        <h2>Current Season</h2>
+        <span class="card-badge">Live Predictions</span>
+      </div>
+      <div class="champions-grid">
+        <article class="champion-card">
+          <div class="champion-icon">🏆</div>
+          <span class="champion-label">Driver Champion</span>
+          <strong class="champion-name">{{ current.champion_driver }}</strong>
         </article>
-        <article>
-          <span>Constructor Champion</span>
-          <strong>{{ current.champion_constructor }}</strong>
+        <article class="champion-card">
+          <div class="champion-icon">🏁</div>
+          <span class="champion-label">Constructor Champion</span>
+          <strong class="champion-name">{{ current.champion_constructor }}</strong>
         </article>
       </div>
       <div class="tables">
         <div class="table-block">
           <h3>Driver Title Probability</h3>
-          <ul>
+          <ul class="probability-list">
             {% for rank, name, probability in current.driver_probabilities %}
-            <li>
+            <li class="probability-item" style="--index: {{ rank }}">
               <span class="rank">{{ rank }}</span>
               <span class="name">{{ name }}</span>
+              <span class="bar-container">
+                <span class="bar" style="--w: {{ probability }}%;"></span>
+              </span>
               <span class="value">{{ '%.2f'|format(probability) }}%</span>
-              <span class="bar" style="--w: {{ probability }}%;"></span>
             </li>
             {% endfor %}
           </ul>
         </div>
         <div class="table-block">
           <h3>Constructor Title Probability</h3>
-          <ul>
+          <ul class="probability-list">
             {% for rank, name, probability in current.constructor_probabilities %}
-            <li>
+            <li class="probability-item" style="--index: {{ rank }}">
               <span class="rank">{{ rank }}</span>
               <span class="name">{{ name }}</span>
+              <span class="bar-container">
+                <span class="bar" style="--w: {{ probability }}%;"></span>
+              </span>
               <span class="value">{{ '%.2f'|format(probability) }}%</span>
-              <span class="bar" style="--w: {{ probability }}%;"></span>
             </li>
             {% endfor %}
           </ul>
         </div>
         <div class="table-block">
           <h3>Expected Driver Points</h3>
-          <ul>
+          <ul class="probability-list">
             {% for rank, name, points in current.driver_points %}
-            <li>
+            <li class="probability-item" style="--index: {{ rank }}">
               <span class="rank">{{ rank }}</span>
               <span class="name">{{ name }}</span>
               <span class="value">{{ '%.1f'|format(points) }} pts</span>
@@ -113,9 +142,9 @@
         </div>
         <div class="table-block">
           <h3>Expected Constructor Points</h3>
-          <ul>
+          <ul class="probability-list">
             {% for rank, name, points in current.constructor_points %}
-            <li>
+            <li class="probability-item" style="--index: {{ rank }}">
               <span class="rank">{{ rank }}</span>
               <span class="name">{{ name }}</span>
               <span class="value">{{ '%.1f'|format(points) }} pts</span>
@@ -126,50 +155,59 @@
       </div>
     </section>
 
-    <section class="season-card reveal" style="--delay: 0.22s;">
-      <h2>Next Season Projection</h2>
-      <div class="champions">
-        <article>
-          <span>Driver Champion</span>
-          <strong>{{ next_season.champion_driver }}</strong>
+    <section class="season-card reveal glass-effect" style="--delay: 0.22s;">
+      <div class="card-header">
+        <h2>Next Season Projection</h2>
+        <span class="card-badge">Future Forecast</span>
+      </div>
+      <div class="champions-grid">
+        <article class="champion-card">
+          <div class="champion-icon">🏆</div>
+          <span class="champion-label">Driver Champion</span>
+          <strong class="champion-name">{{ next_season.champion_driver }}</strong>
         </article>
-        <article>
-          <span>Constructor Champion</span>
-          <strong>{{ next_season.champion_constructor }}</strong>
+        <article class="champion-card">
+          <div class="champion-icon">🏁</div>
+          <span class="champion-label">Constructor Champion</span>
+          <strong class="champion-name">{{ next_season.champion_constructor }}</strong>
         </article>
       </div>
       <div class="tables">
         <div class="table-block">
           <h3>Driver Title Probability</h3>
-          <ul>
+          <ul class="probability-list">
             {% for rank, name, probability in next_season.driver_probabilities %}
-            <li>
+            <li class="probability-item" style="--index: {{ rank }}">
               <span class="rank">{{ rank }}</span>
               <span class="name">{{ name }}</span>
+              <span class="bar-container">
+                <span class="bar" style="--w: {{ probability }}%;"></span>
+              </span>
               <span class="value">{{ '%.2f'|format(probability) }}%</span>
-              <span class="bar" style="--w: {{ probability }}%;"></span>
             </li>
             {% endfor %}
           </ul>
         </div>
         <div class="table-block">
           <h3>Constructor Title Probability</h3>
-          <ul>
+          <ul class="probability-list">
             {% for rank, name, probability in next_season.constructor_probabilities %}
-            <li>
+            <li class="probability-item" style="--index: {{ rank }}">
               <span class="rank">{{ rank }}</span>
               <span class="name">{{ name }}</span>
+              <span class="bar-container">
+                <span class="bar" style="--w: {{ probability }}%;"></span>
+              </span>
               <span class="value">{{ '%.2f'|format(probability) }}%</span>
-              <span class="bar" style="--w: {{ probability }}%;"></span>
             </li>
             {% endfor %}
           </ul>
         </div>
         <div class="table-block">
           <h3>Expected Driver Points</h3>
-          <ul>
+          <ul class="probability-list">
             {% for rank, name, points in next_season.driver_points %}
-            <li>
+            <li class="probability-item" style="--index: {{ rank }}">
               <span class="rank">{{ rank }}</span>
               <span class="name">{{ name }}</span>
               <span class="value">{{ '%.1f'|format(points) }} pts</span>
@@ -179,9 +217,9 @@
         </div>
         <div class="table-block">
           <h3>Expected Constructor Points</h3>
-          <ul>
+          <ul class="probability-list">
             {% for rank, name, points in next_season.constructor_points %}
-            <li>
+            <li class="probability-item" style="--index: {{ rank }}">
               <span class="rank">{{ rank }}</span>
               <span class="name">{{ name }}</span>
               <span class="value">{{ '%.1f'|format(points) }} pts</span>
