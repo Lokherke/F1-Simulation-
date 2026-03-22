@@ -102,6 +102,76 @@
       }
     }
 
+    @keyframes pageTransitionOut {
+      from {
+        opacity: 0;
+        transform: scale(1);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+    }
+
+    .transition-overlay {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      transition: opacity 0.6s ease-out;
+    }
+
+    .transition-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    @keyframes smoothSpin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    @keyframes subtleGlow {
+      0%, 100% { box-shadow: 0 0 20px rgba(220, 38, 38, 0.4); }
+      50% { box-shadow: 0 0 40px rgba(220, 38, 38, 0.8); }
+    }
+
+    .loading-spinner {
+      width: 80px;
+      height: 80px;
+      border: 3px solid rgba(220, 38, 38, 0.2);
+      border-top: 3px solid #dc2626;
+      border-radius: 50%;
+      animation: smoothSpin 1.5s linear infinite, subtleGlow 2s ease-in-out infinite;
+      opacity: 0;
+      transition: opacity 0.4s ease-out;
+    }
+
+    .transition-overlay.active .loading-spinner {
+      opacity: 1;
+    }
+
+    .loading-text {
+      margin-top: 40px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: #dc2626;
+      opacity: 0;
+      text-transform: uppercase;
+      transition: opacity 0.3s ease-out;
+    }
+
+    .transition-overlay.active .loading-text {
+      opacity: 1;
+    }
+
     .status-item {
       display: flex;
       align-items: center;
@@ -424,6 +494,12 @@
   </style>
 </head>
 <body>
+  <!-- Transition Overlay -->
+  <div id="transitionOverlay" class="transition-overlay">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loadingText">Engine starting...</div>
+  </div>
+
   <div class="container">
     <!-- Background Layer -->
     <div class="background-layer">
@@ -468,7 +544,7 @@
           <span class="cta-label">Championship Entry</span>
           <p class="cta-description">Join the grid and compete against the world's fastest drivers.</p>
         </div>
-        <a href="/simulation" class="cta-button">
+        <a href="/simulation" class="cta-button" onclick="handleRedirect(event)">
           <div class="button-text">
             <span class="button-title">Start Engine</span>
             <span class="button-subtitle">Redirect to Sim</span>
@@ -481,35 +557,144 @@
       </div>
 
       <!-- Background Accent -->
-      <div class="accent-number">44</div>
+      <div class="accent-number" id="accentNum">44</div>
     </div>
   </div>
 
   <script>
-    // Array of F1-themed racing GIFs
+    // Array of F1-themed racing GIFs with corresponding numbers
     const racingGifs = [
-      'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZThjdXRhenltbmdxczNyYWlxZnZyMndvMDA3ZXI1ZTFoNGVpMW9wdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Ka2L8mtZ9gybPk7Suq/giphy.gif',
-      'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzBobWg3dmlrOTFhbXY1cjQ0d2Q5OXl1bG5hYzN2bmZncHEyYWRtbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QXIkRfWFX3kjJAOBdv/giphy.gif',
-      'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHFocWhqZWkxenMwdWVlcmF0NmQxanlucWZoMGVieGh2Z2Q2YzBoaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/C7qsWiS15MuhMXerys/giphy.gif'
+      { url: 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZThjdXRhenltbmdxczNyYWlxZnZyMndvMDA3ZXI1ZTFoNGVpMW9wdCZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/Ka2L8mtZ9gybPk7Suq/giphy.gif', number: '3' },
+      { url: 'https://media1.giphy.com/media/v1.Y2lkPTc5MGI3NjExZzBobWg3dmlrOTFhbXY1cjQ0d2Q5OXl1bG5hYzN2bmZncHEyYWRtbSZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/QXIkRfWFX3kjJAOBdv/giphy.gif', number: '12' },
+      { url: 'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExZHFocWhqZWkxenMwdWVlcmF0NmQxanlucWZoMGVieGh2Z2Q2YzBoaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/C7qsWiS15MuhMXerys/giphy.gif', number: '1' }
     ];
 
-    // Select a random GIF on page load
-    function setRandomGif() {
-      const randomIndex = Math.floor(Math.random() * racingGifs.length);
-      const bgImage = document.getElementById('dynamicBg');
-      if (bgImage) {
-        bgImage.src = racingGifs[randomIndex];
-      }
+    let currentGifIndex = 0;
+    let currentNumberIndex = 0;
+
+    // Function to get random interval between 2-3 seconds
+    function getRandomInterval() {
+      return Math.random() * 1000 + 2000; // Returns value between 2000-3000ms
     }
 
-    // Set random GIF when page loads
-    window.addEventListener('load', setRandomGif);
+    // Function to update GIF only
+    function changeGif() {
+      const bgImage = document.getElementById('dynamicBg');
+      
+      if (bgImage) {
+        // Add fade out effect
+        bgImage.style.opacity = '0';
+        
+        // Change the GIF after fade out completes
+        setTimeout(() => {
+          bgImage.src = racingGifs[currentGifIndex].url;
+          // Fade back in
+          bgImage.style.opacity = '0.25';
+        }, 300);
+      }
+      
+      // Move to next GIF
+      currentGifIndex = (currentGifIndex + 1) % racingGifs.length;
+    }
+
+    // Function to update number only (every 3 seconds)
+    function changeNumber() {
+      const accentNumber = document.getElementById('accentNum');
+      
+      if (accentNumber) {
+        accentNumber.style.opacity = '0.02';
+        setTimeout(() => {
+          accentNumber.textContent = racingGifs[currentNumberIndex].number;
+          accentNumber.style.opacity = '0.15';
+        }, 300);
+      }
+      
+      // Move to next number
+      currentNumberIndex = (currentNumberIndex + 1) % racingGifs.length;
+    }
+
+    // Initialize and start auto-cycling
+    function initGifCycling() {
+      const bgImage = document.getElementById('dynamicBg');
+      const accentNumber = document.getElementById('accentNum');
+      
+      // Add transition to CSS for smooth fade
+      if (bgImage) {
+        bgImage.style.transition = 'opacity 0.3s ease-in-out';
+        bgImage.src = racingGifs[currentGifIndex].url;
+      }
+      
+      if (accentNumber) {
+        accentNumber.style.transition = 'opacity 0.3s ease-in-out';
+        accentNumber.textContent = racingGifs[currentNumberIndex].number;
+        accentNumber.style.opacity = '0.15';
+      }
+      
+      // Move to next for the loop
+      currentGifIndex = (currentGifIndex + 1) % racingGifs.length;
+      currentNumberIndex = (currentNumberIndex + 1) % racingGifs.length;
+      
+      // Set interval to change GIF automatically with random timing
+      function scheduleNextGifChange() {
+        setTimeout(() => {
+          changeGif();
+          scheduleNextGifChange();
+        }, getRandomInterval());
+      }
+      scheduleNextGifChange();
+
+      // Set interval to change number every 3 seconds
+      setInterval(changeNumber, 3000);
+    }
+
+    // Initialize when page loads
+    window.addEventListener('load', initGifCycling);
     
     // Also call it immediately in case the image element is already loaded
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', setRandomGif);
+      document.addEventListener('DOMContentLoaded', initGifCycling);
     } else {
-      setRandomGif();
+      initGifCycling();
+    }
+
+    // Handle redirect with transition animation
+    function handleRedirect(event) {
+      event.preventDefault();
+      const transitionOverlay = document.getElementById('transitionOverlay');
+      const loadingText = document.getElementById('loadingText');
+      const targetUrl = event.currentTarget.href;
+      
+      // Show loading animation
+      if (transitionOverlay) {
+        transitionOverlay.classList.add('active');
+      }
+      
+      // Change text to Turbo after 2 seconds
+      setTimeout(() => {
+        if (loadingText) {
+          loadingText.style.opacity = '0';
+          setTimeout(() => {
+            loadingText.textContent = 'Initializing turbo...';
+            loadingText.style.opacity = '1';
+          }, 300);
+        }
+      }, 2000);
+      
+      // Change text to Launch Ready after 5 more seconds (7 seconds total)
+      setTimeout(() => {
+        if (loadingText) {
+          loadingText.style.opacity = '0';
+          setTimeout(() => {
+            loadingText.textContent = 'Launch Ready';
+            loadingText.style.opacity = '1';
+          }, 300);
+        }
+      }, 7000);
+      
+      // Navigate after final sequence
+      setTimeout(() => {
+        window.location.href = targetUrl;
+      }, 8500);
     }
   </script>
 </body>
