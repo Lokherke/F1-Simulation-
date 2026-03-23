@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>F1 Championship Forecast</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23ef4444' width='100' height='100'/><text x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle'>F1</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .loading-spinner {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+    }
+    .loading-spinner.active {
+      display: block;
+    }
+    .spinner {
+      border: 4px solid rgba(239, 68, 68, 0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    .results-container {
+      display: none;
+    }
+    .results-container.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="animated-bg"></div>
+  
+  <header class="hero reveal">
+    <div class="hero-content">
+      <p class="kicker">🏁 F1 Championship Predictor</p>
+      <h1>Driver + Constructor <span class="gradient-text">Forecast Lab</span></h1>
+      <p class="sub">Advanced Monte Carlo simulation combining engine power, aero dynamics, chassis balance, reliability, strategy, and weather volatility for unprecedented championship predictions.</p>
+    </div>
+  </header>
+
+  <section class="panel panel-controls reveal" style="--delay: 0.08s;">
+    <div class="panel-header">
+      <h2 class="panel-title">Simulation Parameters</h2>
+      <p class="panel-subtitle">Fine-tune your forecast model</p>
+    </div>
+    <form id="simForm" class="controls">
+      <label class="input-group">
+        <span class="label-text">Simulations</span>
+        <input type="number" name="simulations" min="200" step="100" value="3000" placeholder="e.g., 3000">
+        <span class="input-hint">Higher = more accurate</span>
+      </label>
+      <label class="input-group">
+        <span class="label-text">Seed</span>
+        <input type="number" name="seed" value="42" placeholder="Random seed">
+        <span class="input-hint">Reproducibility</span>
+      </label>
+      <label class="input-group">
+        <span class="label-text">Rows to show</span>
+        <input type="number" name="top" min="3" max="20" value="8" placeholder="3-20">
+        <span class="input-hint">Top results</span>
+      </label>
+      <label class="input-group">
+        <span class="label-text">Season year</span>
+        <input type="number" name="year" min="2018" max="2100" placeholder="Auto latest">
+        <span class="input-hint">Optional</span>
+      </label>
+      <label class="input-group">
+        <span class="label-text">Qualifying weight</span>
+        <input type="number" name="qualifying_weight" min="0" max="1" step="0.01" value="0.28" placeholder="0.28">
+        <span class="input-hint">0-1 scale</span>
+      </label>
+      <label class="input-group">
+        <span class="label-text">Safety-car rate</span>
+        <input type="number" name="safety_car_rate" min="0" max="1" step="0.01" value="0.26" placeholder="0.26">
+        <span class="input-hint">0-1 scale</span>
+      </label>
+      <label class="input-group">
+        <span class="label-text">Tire degradation</span>
+        <input type="number" name="tire_impact" min="0" max="1" step="0.01" value="0.32" placeholder="0.32">
+        <span class="input-hint">0-1 scale</span>
+      </label>
+      <label class="input-group">
+        <span class="label-text">Reliability sensitivity</span>
+        <input type="number" name="reliability_sensitivity" min="0" max="1" step="0.01" value="0.30" placeholder="0.30">
+        <span class="input-hint">0-1 scale</span>
+      </label>
+      <label class="input-group">
+        <span class="label-text">Chaos level</span>
+        <input type="number" name="chaos_level" min="0" max="1" step="0.01" value="0.35" placeholder="0.35">
+        <span class="input-hint">0-1 scale</span>
+      </label>
+      <button type="submit" class="btn btn-primary">
+        <span>Run Forecast</span>
+        <span class="btn-icon">→</span>
+      </button>
+    </form>
+  </section>
+
+  <div class="loading-spinner" id="loadingSpinner">
+    <div class="spinner"></div>
+    <p>Running simulations...</p>
+  </div>
+
+  <main class="layout results-container" id="resultsContainer">
+    <!-- Results will be rendered here -->
+  </main>
+
+  <script>
+    // Backend URL - works in both local dev and production
+    const BACKEND_URL = window.location.hostname === 'localhost' 
+      ? 'http://localhost:5000' 
+      : 'https://f1-simulation.onrender.com';
+    
+    const simForm = document.getElementById('simForm');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+    const resultsContainer = document.getElementById('resultsContainer');
+
+    simForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      loadingSpinner.classList.add('active');
+      resultsContainer.classList.remove('active');
+
+      const formData = new FormData(simForm);
+      const data = {
+        simulations: parseInt(formData.get('simulations')),
+        seed: parseInt(formData.get('seed')),
+        top: parseInt(formData.get('top')),
+        year: formData.get('year') || '',
+        qualifying_weight: parseFloat(formData.get('qualifying_weight')),
+        safety_car_rate: parseFloat(formData.get('safety_car_rate')),
+        tire_impact: parseFloat(formData.get('tire_impact')),
+        reliability_sensitivity: parseFloat(formData.get('reliability_sensitivity')),
+        chaos_level: parseFloat(formData.get('chaos_level'))
+      };
+
+      try {
+        const response = await fetch(`${BACKEND_URL}/api/simulation`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data)
+        });
+
+        if (!response.ok) throw new Error(`API error: ${response.status}`);
+        
+        const results = await response.json();
+        renderResults(results);
+        
+        loadingSpinner.classList.remove('active');
+        resultsContainer.classList.add('active');
+      } catch (error) {
+        console.error('Error:', error);
+        loadingSpinner.classList.remove('active');
+        resultsContainer.innerHTML = `<div style="color: red; padding: 2rem;">Error: ${error.message}. Make sure BACKEND_URL is set correctly.</div>`;
+        resultsContainer.classList.add('active');
+      }
+    });
+
+    function renderResults(data) {
+      const html = `
+        <section class="season-card reveal glass-effect" style="--delay: 0.14s;">
+          <div class="card-header">
+            <h2>Current Season ${data.year || 'Live'}</h2>
+            <span class="card-badge">Live Predictions</span>
+          </div>
+          <div class="champions-grid">
+            <article class="champion-card">
+              <div class="champion-icon">🏆</div>
+              <span class="champion-label">Driver Champion</span>
+              <strong class="champion-name">${data.current.champion_driver}</strong>
+            </article>
+            <article class="champion-card">
+              <div class="champion-icon">🏁</div>
+              <span class="champion-label">Constructor Champion</span>
+              <strong class="champion-name">${data.current.champion_constructor}</strong>
+            </article>
+          </div>
+          <div class="tables">
+            ${renderProbabilityTable('Driver Title Probability', data.current.driver_probabilities, 1)}
+            ${renderProbabilityTable('Constructor Title Probability', data.current.constructor_probabilities, 2)}
+            ${renderPointsTable('Expected Driver Points', data.current.driver_points, 3)}
+            ${renderPointsTable('Expected Constructor Points', data.current.constructor_points, 4)}
+          </div>
+        </section>
+
+        <section class="season-card reveal glass-effect" style="--delay: 0.22s;">
+          <div class="card-header">
+            <h2>Next Season Projection</h2>
+            <span class="card-badge">Future Forecast</span>
+          </div>
+          <div class="champions-grid">
+            <article class="champion-card">
+              <div class="champion-icon">🏆</div>
+              <span class="champion-label">Driver Champion</span>
+              <strong class="champion-name">${data.next_season.champion_driver}</strong>
+            </article>
+            <article class="champion-card">
+              <div class="champion-icon">🏁</div>
+              <span class="champion-label">Constructor Champion</span>
+              <strong class="champion-name">${data.next_season.champion_constructor}</strong>
+            </article>
+          </div>
+          <div class="tables">
+            ${renderProbabilityTable('Driver Title Probability', data.next_season.driver_probabilities, 1)}
+            ${renderProbabilityTable('Constructor Title Probability', data.next_season.constructor_probabilities, 2)}
+            ${renderPointsTable('Expected Driver Points', data.next_season.driver_points, 3)}
+            ${renderPointsTable('Expected Constructor Points', data.next_season.constructor_points, 4)}
+          </div>
+        </section>
+      `;
+      resultsContainer.innerHTML = html;
+    }
+
+    function renderProbabilityTable(title, items, index) {
+      const medals = ['🥇', '🥈', '🥉'];
+      const medal = medals[index - 1] || '';
+      
+      return `
+        <div class="table-block">
+          <h3>${medal} ${title}</h3>
+          <ul class="probability-list">
+            ${items.map(([rank, name, prob], idx) => `
+              <li class="probability-item" style="--index: ${rank}">
+                <span class="rank">${rank}</span>
+                <span class="name">${name}</span>
+                <span class="bar-container">
+                  <span class="bar" style="--w: ${prob}%;"></span>
+                </span>
+                <span class="value">${prob.toFixed(2)}%</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      `;
+    }
+
+    function renderPointsTable(title, items, index) {
+      const medals = ['🥇', '🥈', '🥉'];
+      const medal = medals[index - 1] || '';
+      
+      return `
+        <div class="table-block">
+          <h3>${medal} ${title}</h3>
+          <ul class="probability-list">
+            ${items.map(([rank, name, points]) => `
+              <li class="probability-item" style="--index: ${rank}">
+                <span class="rank">${rank}</span>
+                <span class="name">${name}</span>
+                <span class="value">${points.toFixed(1)} pts</span>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html>
