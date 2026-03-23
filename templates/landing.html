@@ -3,28 +3,142 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>F1 SIM - Racing Championship Forecast</title>
+  <title>F1 Championship Predictor</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23ef4444' width='100' height='100'/><text x='50' y='70' font-size='60' font-weight='bold' fill='white' text-anchor='middle'>F1</text></svg>">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
   <style>
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-    }
-
+    
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #050505;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
       color: white;
-      overflow: hidden;
-      user-select: none;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
     }
+    
+    .container {
+      max-width: 600px;
+      text-align: center;
+    }
+    
+    .header {
+      margin-bottom: 40px;
+    }
+    
+    .logo {
+      font-size: 80px;
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      color: #ef4444;
+    }
+    
+    .subtitle {
+      font-size: 1.1rem;
+      color: #999;
+      margin-bottom: 30px;
+    }
+    
+    .description {
+      font-size: 1rem;
+      line-height: 1.6;
+      color: #ccc;
+      margin-bottom: 40px;
+    }
+    
+    .cta-button {
+      display: inline-block;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      color: white;
+      padding: 16px 40px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.3s ease;
+      margin-top: 20px;
+    }
+    
+    .cta-button:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 30px rgba(239, 68, 68, 0.4);
+    }
+    
+    .features {
+      margin-top: 60px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 30px;
+      border-radius: 12px;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+    
+    .features h3 {
+      margin-bottom: 20px;
+      color: #ef4444;
+    }
+    
+    .feature-item {
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .feature-item:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    .feature-item strong {
+      color: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">🏁</div>
+      <h1>F1 SIM</h1>
+      <p class="subtitle">Championship Forecast Lab</p>
+    </div>
+    
+    <div class="description">
+      <p>Advanced Monte Carlo simulation combining engine performance, aerodynamics, reliability, strategy, driver skills, and weather volatility to predict F1 championship outcomes.</p>
+    </div>
+    
+    <a href="/simulation" class="cta-button">Start Simulation →</a>
+    
+    <div class="features">
+      <h3>What We Predict</h3>
+      <div class="feature-item">
+        <strong>Current Season:</strong> Driver & Constructor Champions with win probabilities
+      </div>
+      <div class="feature-item">
+        <strong>Next Season:</strong> Championship forecasts based on team development
+      </div>
+      <div class="feature-item">
+        <strong>Customizable:</strong> Adjust 9+ parameters to fine-tune your model
+      </div>
+      <div class="feature-item">
+        <strong>Real Data:</strong> Powered by actual F1 race data via FastF1
+      </div>
+    </div>
+  </div>
+</body>
+</html>
 
     .container {
       min-height: 100vh;
