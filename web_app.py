@@ -64,23 +64,84 @@ def _prediction_view_model(prediction: SeasonPrediction, top_n: int) -> Dict[str
 
 
 @app.route("/")
-def index() -> str:
-    """Serve the F1 SIM app from public/index.html"""
-    return send_from_directory(os.path.join(BASE_DIR, 'public'), 'index.html')
+def landing() -> str:
+    """Serve the F1 SIM landing page"""
+    return render_template("landing.html")
 
 
-@app.route("/<path:filename>")
-def serve_static(filename):
-    """Serve static files from public folder (CSS, JS, etc)"""
-    return send_from_directory(os.path.join(BASE_DIR, 'public'), filename)
+@app.route("/simulation", methods=["GET", "POST"])
+def simulation() -> str:
+    simulations = 3000
+    seed = 42
+    top = 8
+    year: int | None = None
+    qualifying_weight = 0.28
+    safety_car_rate = 0.26
+    tire_impact = 0.32
+    reliability_sensitivity = 0.30
+    chaos_level = 0.35
+
+    if request.method == "POST":
+        simulations = max(200, int(request.form.get("simulations", simulations)))
+        seed = int(request.form.get("seed", seed))
+        top = max(3, min(20, int(request.form.get("top", top))))
+        year_raw = request.form.get("year", "").strip()
+        year = int(year_raw) if year_raw else None
+        qualifying_weight = max(0.0, min(1.0, float(request.form.get("qualifying_weight", qualifying_weight))))
+        safety_car_rate = max(0.0, min(1.0, float(request.form.get("safety_car_rate", safety_car_rate))))
+        tire_impact = max(0.0, min(1.0, float(request.form.get("tire_impact", tire_impact))))
+        reliability_sensitivity = max(0.0, min(1.0, float(request.form.get("reliability_sensitivity", reliability_sensitivity))))
+        chaos_level = max(0.0, min(1.0, float(request.form.get("chaos_level", chaos_level))))
+
+        current_prediction, next_prediction = predict_current_and_next_season(
+            simulations=simulations,
+            seed=seed,
+            season_year=year,
+            qualifying_weight=qualifying_weight,
+            safety_car_rate=safety_car_rate,
+            tire_degradation_impact=tire_impact,
+            reliability_sensitivity=reliability_sensitivity,
+            chaos_level=chaos_level,
+        )
+
+        return render_template(
+            "index.html",
+            simulations=simulations,
+            seed=seed,
+            top=top,
+            year="" if year is None else year,
+            qualifying_weight=qualifying_weight,
+            safety_car_rate=safety_car_rate,
+            tire_impact=tire_impact,
+            reliability_sensitivity=reliability_sensitivity,
+            chaos_level=chaos_level,
+            current=_prediction_view_model(current_prediction, top),
+            next_season=_prediction_view_model(next_prediction, top),
+        )
+    
+    # GET request - show form with default values
+    return render_template(
+        "index.html",
+        simulations=simulations,
+        seed=seed,
+        top=top,
+        year="",
+        qualifying_weight=qualifying_weight,
+        safety_car_rate=safety_car_rate,
+        tire_impact=tire_impact,
+        reliability_sensitivity=reliability_sensitivity,
+        chaos_level=chaos_level,
+        current=None,
+        next_season=None,
+    )
 
 
 @app.route("/api/simulation", methods=["POST"])
 def api_simulation() -> dict:
-    """API endpoint for JSON requests from Netlify frontend"""
+    """API endpoint for JSON requests - handles long simulations"""
     data = request.get_json()
     
-    simulations = max(200, int(data.get("simulations", 3000)))
+    simulations = max(200, min(1000, int(data.get("simulations", 500))))  # Cap at 1000 for speed
     seed = int(data.get("seed", 42))
     top = max(3, min(20, int(data.get("top", 8))))
     year_raw = str(data.get("year", "")).strip()
@@ -91,30 +152,34 @@ def api_simulation() -> dict:
     reliability_sensitivity = max(0.0, min(1.0, float(data.get("reliability_sensitivity", 0.30))))
     chaos_level = max(0.0, min(1.0, float(data.get("chaos_level", 0.35))))
 
-    current_prediction, next_prediction = predict_current_and_next_season(
-        simulations=simulations,
-        seed=seed,
-        season_year=year,
-        qualifying_weight=qualifying_weight,
-        safety_car_rate=safety_car_rate,
-        tire_degradation_impact=tire_impact,
-        reliability_sensitivity=reliability_sensitivity,
-        chaos_level=chaos_level,
-    )
+    try:
+        current_prediction, next_prediction = predict_current_and_next_season(
+            simulations=simulations,
+            seed=seed,
+            season_year=year,
+            qualifying_weight=qualifying_weight,
+            safety_car_rate=safety_car_rate,
+            tire_degradation_impact=tire_impact,
+            reliability_sensitivity=reliability_sensitivity,
+            chaos_level=chaos_level,
+        )
 
-    return jsonify({
-        "simulations": simulations,
-        "seed": seed,
-        "top": top,
-        "year": year or "",
-        "qualifying_weight": qualifying_weight,
-        "safety_car_rate": safety_car_rate,
-        "tire_impact": tire_impact,
-        "reliability_sensitivity": reliability_sensitivity,
-        "chaos_level": chaos_level,
-        "current": _prediction_view_model(current_prediction, top),
-        "next_season": _prediction_view_model(next_prediction, top),
-    })
+        return jsonify({
+            "success": True,
+            "simulations": simulations,
+            "seed": seed,
+            "top": top,
+            "year": year or "",
+            "qualifying_weight": qualifying_weight,
+            "safety_car_rate": safety_car_rate,
+            "tire_impact": tire_impact,
+            "reliability_sensitivity": reliability_sensitivity,
+            "chaos_level": chaos_level,
+            "current": _prediction_view_model(current_prediction, top),
+            "next_season": _prediction_view_model(next_prediction, top),
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 if __name__ == "__main__":
