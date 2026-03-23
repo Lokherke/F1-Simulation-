@@ -1,8 +1,1 @@
-import os
-from dotenv import load_dotenv
-
-load_dotenv()  # Add this near the top
-
-app = Flask(__name__, ...)
-DEBUG = os.getenv('FLASK_DEBUG', '0') == '1'
-app.run(debug=DEBUG)
+web: gunicorn -w 4 -b 0.0.0.0:$PORT --timeout 300 web_app:app
