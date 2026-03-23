@@ -501,6 +501,12 @@
     <div class="loading-text" id="loadingText">Engine starting...</div>
   </div>
 
+  <!-- Audio element for engine start sound -->
+  <audio id="engineSound" preload="auto">
+    <source src="/Lexus%20Lfa%20-%20Engine%20Start%20-%20Lexus%20Uk.m4a" type="audio/mp4">
+    Your browser does not support the audio element.
+  </audio>
+
   <div class="container">
     <!-- Background Layer -->
     <div class="background-layer">
@@ -664,6 +670,13 @@
       const transitionOverlay = document.getElementById('transitionOverlay');
       const loadingText = document.getElementById('loadingText');
       const targetUrl = event.currentTarget.href;
+      const engineSound = document.getElementById('engineSound');
+      
+      // Play engine start sound
+      if (engineSound) {
+        engineSound.currentTime = 0; // Reset to start
+        engineSound.play().catch(error => console.log('Audio playback failed:', error));
+      }
       
       // Show loading animation
       if (transitionOverlay) {
