@@ -27,209 +27,286 @@
       <h2 class="panel-title">Simulation Parameters</h2>
       <p class="panel-subtitle">Fine-tune your forecast model</p>
     </div>
-    <form method="post" class="controls">
+    <form id="simForm" class="controls">
       <label class="input-group">
         <span class="label-text">Simulations</span>
-        <input type="number" name="simulations" min="200" step="100" value="{{ simulations }}" placeholder="e.g., 3000">
-        <span class="input-hint">Higher = more accurate</span>
+        <input type="number" id="simulations" name="simulations" min="200" step="100" value="500" placeholder="e.g., 500">
+        <span class="input-hint">Higher = more accurate (capped at 1000)</span>
       </label>
       <label class="input-group">
         <span class="label-text">Seed</span>
-        <input type="number" name="seed" value="{{ seed }}" placeholder="Random seed">
+        <input type="number" id="seed" name="seed" value="42" placeholder="Random seed">
         <span class="input-hint">Reproducibility</span>
       </label>
       <label class="input-group">
         <span class="label-text">Rows to show</span>
-        <input type="number" name="top" min="3" max="20" value="{{ top }}" placeholder="3-20">
+        <input type="number" id="top" name="top" min="3" max="20" value="8" placeholder="3-20">
         <span class="input-hint">Top results</span>
       </label>
       <label class="input-group">
         <span class="label-text">Season year</span>
-        <input type="number" name="year" min="2018" max="2100" value="{{ year }}" placeholder="Auto latest">
+        <input type="number" id="year" name="year" min="2018" max="2100" placeholder="Auto latest">
         <span class="input-hint">Optional</span>
       </label>
       <label class="input-group">
         <span class="label-text">Qualifying weight</span>
-        <input type="number" name="qualifying_weight" min="0" max="1" step="0.01" value="{{ qualifying_weight }}" placeholder="0.28">
+        <input type="number" id="qualifying_weight" name="qualifying_weight" min="0" max="1" step="0.01" value="0.28" placeholder="0.28">
         <span class="input-hint">0-1 scale</span>
       </label>
       <label class="input-group">
         <span class="label-text">Safety-car rate</span>
-        <input type="number" name="safety_car_rate" min="0" max="1" step="0.01" value="{{ safety_car_rate }}" placeholder="0.26">
+        <input type="number" id="safety_car_rate" name="safety_car_rate" min="0" max="1" step="0.01" value="0.26" placeholder="0.26">
         <span class="input-hint">0-1 scale</span>
       </label>
       <label class="input-group">
         <span class="label-text">Tire degradation</span>
-        <input type="number" name="tire_impact" min="0" max="1" step="0.01" value="{{ tire_impact }}" placeholder="0.32">
+        <input type="number" id="tire_impact" name="tire_impact" min="0" max="1" step="0.01" value="0.32" placeholder="0.32">
         <span class="input-hint">0-1 scale</span>
       </label>
       <label class="input-group">
         <span class="label-text">Reliability sensitivity</span>
-        <input type="number" name="reliability_sensitivity" min="0" max="1" step="0.01" value="{{ reliability_sensitivity }}" placeholder="0.30">
+        <input type="number" id="reliability_sensitivity" name="reliability_sensitivity" min="0" max="1" step="0.01" value="0.30" placeholder="0.30">
         <span class="input-hint">0-1 scale</span>
       </label>
       <label class="input-group">
         <span class="label-text">Chaos level</span>
-        <input type="number" name="chaos_level" min="0" max="1" step="0.01" value="{{ chaos_level }}" placeholder="0.35">
+        <input type="number" id="chaos_level" name="chaos_level" min="0" max="1" step="0.01" value="0.35" placeholder="0.35">
         <span class="input-hint">0-1 scale</span>
       </label>
       <button type="submit" class="btn btn-primary">
-        <span>Run Forecast</span>
-        <span class="btn-icon">→</span>
+        <span id="btnText">Run Forecast</span>
+        <span class="btn-icon" id="btnIcon">→</span>
       </button>
     </form>
   </section>
 
-  <main class="layout">
-    <section class="season-card reveal glass-effect" style="--delay: 0.14s;">
-      <div class="card-header">
-        <h2>Current Season</h2>
-        <span class="card-badge">Live Predictions</span>
-      </div>
-      <div class="champions-grid">
-        <article class="champion-card">
-          <div class="champion-icon">🏆</div>
-          <span class="champion-label">Driver Champion</span>
-          <strong class="champion-name">{{ current.champion_driver }}</strong>
-        </article>
-        <article class="champion-card">
-          <div class="champion-icon">🏁</div>
-          <span class="champion-label">Constructor Champion</span>
-          <strong class="champion-name">{{ current.champion_constructor }}</strong>
-        </article>
-      </div>
-      <div class="tables">
-        <div class="table-block">
-          <h3>Driver Title Probability</h3>
-          <ul class="probability-list">
-            {% for rank, name, probability in current.driver_probabilities %}
-            <li class="probability-item" style="--index: {{ rank }}">
-              <span class="rank">{{ rank }}</span>
-              <span class="name">{{ name }}</span>
-              <span class="bar-container">
-                <span class="bar" style="--w: {{ probability }}%;"></span>
-              </span>
-              <span class="value">{{ '%.2f'|format(probability) }}%</span>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-        <div class="table-block">
-          <h3>Constructor Title Probability</h3>
-          <ul class="probability-list">
-            {% for rank, name, probability in current.constructor_probabilities %}
-            <li class="probability-item" style="--index: {{ rank }}">
-              <span class="rank">{{ rank }}</span>
-              <span class="name">{{ name }}</span>
-              <span class="bar-container">
-                <span class="bar" style="--w: {{ probability }}%;"></span>
-              </span>
-              <span class="value">{{ '%.2f'|format(probability) }}%</span>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-        <div class="table-block">
-          <h3>Expected Driver Points</h3>
-          <ul class="probability-list">
-            {% for rank, name, points in current.driver_points %}
-            <li class="probability-item" style="--index: {{ rank }}">
-              <span class="rank">{{ rank }}</span>
-              <span class="name">{{ name }}</span>
-              <span class="value">{{ '%.1f'|format(points) }} pts</span>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-        <div class="table-block">
-          <h3>Expected Constructor Points</h3>
-          <ul class="probability-list">
-            {% for rank, name, points in current.constructor_points %}
-            <li class="probability-item" style="--index: {{ rank }}">
-              <span class="rank">{{ rank }}</span>
-              <span class="name">{{ name }}</span>
-              <span class="value">{{ '%.1f'|format(points) }} pts</span>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-    </section>
-
-    <section class="season-card reveal glass-effect" style="--delay: 0.22s;">
-      <div class="card-header">
-        <h2>Next Season Projection</h2>
-        <span class="card-badge">Future Forecast</span>
-      </div>
-      <div class="champions-grid">
-        <article class="champion-card">
-          <div class="champion-icon">🏆</div>
-          <span class="champion-label">Driver Champion</span>
-          <strong class="champion-name">{{ next_season.champion_driver }}</strong>
-        </article>
-        <article class="champion-card">
-          <div class="champion-icon">🏁</div>
-          <span class="champion-label">Constructor Champion</span>
-          <strong class="champion-name">{{ next_season.champion_constructor }}</strong>
-        </article>
-      </div>
-      <div class="tables">
-        <div class="table-block">
-          <h3>Driver Title Probability</h3>
-          <ul class="probability-list">
-            {% for rank, name, probability in next_season.driver_probabilities %}
-            <li class="probability-item" style="--index: {{ rank }}">
-              <span class="rank">{{ rank }}</span>
-              <span class="name">{{ name }}</span>
-              <span class="bar-container">
-                <span class="bar" style="--w: {{ probability }}%;"></span>
-              </span>
-              <span class="value">{{ '%.2f'|format(probability) }}%</span>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-        <div class="table-block">
-          <h3>Constructor Title Probability</h3>
-          <ul class="probability-list">
-            {% for rank, name, probability in next_season.constructor_probabilities %}
-            <li class="probability-item" style="--index: {{ rank }}">
-              <span class="rank">{{ rank }}</span>
-              <span class="name">{{ name }}</span>
-              <span class="bar-container">
-                <span class="bar" style="--w: {{ probability }}%;"></span>
-              </span>
-              <span class="value">{{ '%.2f'|format(probability) }}%</span>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-        <div class="table-block">
-          <h3>Expected Driver Points</h3>
-          <ul class="probability-list">
-            {% for rank, name, points in next_season.driver_points %}
-            <li class="probability-item" style="--index: {{ rank }}">
-              <span class="rank">{{ rank }}</span>
-              <span class="name">{{ name }}</span>
-              <span class="value">{{ '%.1f'|format(points) }} pts</span>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-        <div class="table-block">
-          <h3>Expected Constructor Points</h3>
-          <ul class="probability-list">
-            {% for rank, name, points in next_season.constructor_points %}
-            <li class="probability-item" style="--index: {{ rank }}">
-              <span class="rank">{{ rank }}</span>
-              <span class="name">{{ name }}</span>
-              <span class="value">{{ '%.1f'|format(points) }} pts</span>
-            </li>
-            {% endfor %}
-          </ul>
-        </div>
-      </div>
-    </section>
+  <main class="layout" id="resultsContainer" style="display: none;">
+    <!-- Results will be inserted here by JavaScript -->
   </main>
+
+  <div id="loadingSpinner" style="display: none; text-align: center; padding: 60px 20px;">
+    <div style="font-size: 3rem; animation: spin 1s linear infinite; display: inline-block;">⚙️</div>
+    <p style="margin-top: 20px; font-size: 1.2rem; color: #999;">Running simulations... This may take 1-2 minutes</p>
+  </div>
+
+  <script>
+    const simForm = document.getElementById('simForm');
+    const resultsContainer = document.getElementById('resultsContainer');
+    const loadingSpinner = document.getElementById('loadingSpinner');
+
+    simForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      // Show spinner, hide results
+      loadingSpinner.style.display = 'block';
+      resultsContainer.style.display = 'none';
+      
+      // Collect form data
+      const formData = {
+        simulations: Math.min(1000, parseInt(document.getElementById('simulations').value)),
+        seed: parseInt(document.getElementById('seed').value),
+        top: parseInt(document.getElementById('top').value),
+        year: document.getElementById('year').value || '',
+        qualifying_weight: parseFloat(document.getElementById('qualifying_weight').value),
+        safety_car_rate: parseFloat(document.getElementById('safety_car_rate').value),
+        tire_impact: parseFloat(document.getElementById('tire_impact').value),
+        reliability_sensitivity: parseFloat(document.getElementById('reliability_sensitivity').value),
+        chaos_level: parseFloat(document.getElementById('chaos_level').value)
+      };
+      
+      try {
+        console.log('Sending request to /api/simulation:', formData);
+        
+        const response = await fetch('/api/simulation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(formData)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('API response:', data);
+        
+        if (!data.success) {
+          throw new Error(data.error || 'Simulation failed');
+        }
+        
+        // Render results
+        renderResults(data);
+        loadingSpinner.style.display = 'none';
+        resultsContainer.style.display = 'block';
+        
+      } catch (error) {
+        console.error('Error:', error);
+        loadingSpinner.innerHTML = `<div style="color: #ef4444; padding: 60px 20px; font-size: 1.1rem;">
+          <strong>Error:</strong> ${error.message}
+        </div>`;
+      }
+    });
+
+    function renderResults(data) {
+      const html = `
+        <section class="season-card reveal glass-effect">
+          <div class="card-header">
+            <h2>Current Season ${data.year || 'Live'}</h2>
+            <span class="card-badge">Live Predictions</span>
+          </div>
+          <div class="champions-grid">
+            <article class="champion-card">
+              <div class="champion-icon">🏆</div>
+              <span class="champion-label">Driver Champion</span>
+              <strong class="champion-name">${data.current.champion_driver}</strong>
+            </article>
+            <article class="champion-card">
+              <div class="champion-icon">🏁</div>
+              <span class="champion-label">Constructor Champion</span>
+              <strong class="champion-name">${data.current.champion_constructor}</strong>
+            </article>
+          </div>
+          <div class="tables">
+            <div class="table-block">
+              <h3>Driver Title Probability</h3>
+              <ul class="probability-list">
+                ${data.current.driver_probabilities.map(([rank, name, prob]) => `
+                  <li class="probability-item">
+                    <span class="rank">${rank}</span>
+                    <span class="name">${name}</span>
+                    <span class="bar-container">
+                      <span class="bar" style="width: ${prob}%;"></span>
+                    </span>
+                    <span class="value">${prob.toFixed(2)}%</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+            <div class="table-block">
+              <h3>Constructor Title Probability</h3>
+              <ul class="probability-list">
+                ${data.current.constructor_probabilities.map(([rank, name, prob]) => `
+                  <li class="probability-item">
+                    <span class="rank">${rank}</span>
+                    <span class="name">${name}</span>
+                    <span class="bar-container">
+                      <span class="bar" style="width: ${prob}%;"></span>
+                    </span>
+                    <span class="value">${prob.toFixed(2)}%</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+            <div class="table-block">
+              <h3>Expected Driver Points</h3>
+              <ul class="probability-list">
+                ${data.current.driver_points.map(([rank, name, pts]) => `
+                  <li class="probability-item">
+                    <span class="rank">${rank}</span>
+                    <span class="name">${name}</span>
+                    <span class="value">${pts.toFixed(1)} pts</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+            <div class="table-block">
+              <h3>Expected Constructor Points</h3>
+              <ul class="probability-list">
+                ${data.current.constructor_points.map(([rank, name, pts]) => `
+                  <li class="probability-item">
+                    <span class="rank">${rank}</span>
+                    <span class="name">${name}</span>
+                    <span class="value">${pts.toFixed(1)} pts</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        <section class="season-card reveal glass-effect">
+          <div class="card-header">
+            <h2>Next Season Projection</h2>
+            <span class="card-badge">Future Forecast</span>
+          </div>
+          <div class="champions-grid">
+            <article class="champion-card">
+              <div class="champion-icon">🏆</div>
+              <span class="champion-label">Driver Champion</span>
+              <strong class="champion-name">${data.next_season.champion_driver}</strong>
+            </article>
+            <article class="champion-card">
+              <div class="champion-icon">🏁</div>
+              <span class="champion-label">Constructor Champion</span>
+              <strong class="champion-name">${data.next_season.champion_constructor}</strong>
+            </article>
+          </div>
+          <div class="tables">
+            <div class="table-block">
+              <h3>Driver Title Probability</h3>
+              <ul class="probability-list">
+                ${data.next_season.driver_probabilities.map(([rank, name, prob]) => `
+                  <li class="probability-item">
+                    <span class="rank">${rank}</span>
+                    <span class="name">${name}</span>
+                    <span class="bar-container">
+                      <span class="bar" style="width: ${prob}%;"></span>
+                    </span>
+                    <span class="value">${prob.toFixed(2)}%</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+            <div class="table-block">
+              <h3>Constructor Title Probability</h3>
+              <ul class="probability-list">
+                ${data.next_season.constructor_probabilities.map(([rank, name, prob]) => `
+                  <li class="probability-item">
+                    <span class="rank">${rank}</span>
+                    <span class="name">${name}</span>
+                    <span class="bar-container">
+                      <span class="bar" style="width: ${prob}%;"></span>
+                    </span>
+                    <span class="value">${prob.toFixed(2)}%</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+            <div class="table-block">
+              <h3>Expected Driver Points</h3>
+              <ul class="probability-list">
+                ${data.next_season.driver_points.map(([rank, name, pts]) => `
+                  <li class="probability-item">
+                    <span class="rank">${rank}</span>
+                    <span class="name">${name}</span>
+                    <span class="value">${pts.toFixed(1)} pts</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+            <div class="table-block">
+              <h3>Expected Constructor Points</h3>
+              <ul class="probability-list">
+                ${data.next_season.constructor_points.map(([rank, name, pts]) => `
+                  <li class="probability-item">
+                    <span class="rank">${rank}</span>
+                    <span class="name">${name}</span>
+                    <span class="value">${pts.toFixed(1)} pts</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+        </section>
+      `;
+      
+      resultsContainer.innerHTML = html;
+    }
+    
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+  </script>
 </body>
 </html>
