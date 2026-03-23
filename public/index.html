@@ -118,7 +118,11 @@
   </main>
 
   <script>
-    const BACKEND_URL = 'https://YOUR_RENDER_URL'; // CHANGE THIS!
+    // Backend URL - works in both local dev and production
+    const BACKEND_URL = window.location.hostname === 'localhost' 
+      ? 'http://localhost:5000' 
+      : 'https://f1-simulation.onrender.com';
+    
     const simForm = document.getElementById('simForm');
     const loadingSpinner = document.getElementById('loadingSpinner');
     const resultsContainer = document.getElementById('resultsContainer');

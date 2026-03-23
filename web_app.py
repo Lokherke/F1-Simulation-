@@ -2,12 +2,15 @@ from __future__ import annotations
 
 import os
 from typing import Dict, List, Tuple
+from dotenv import load_dotenv
 
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 
 from app import SeasonPrediction, predict_current_and_next_season
 
+# Load environment variables from .env file
+load_dotenv()
 
 # Get the directory where this script is located
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -19,8 +22,19 @@ app = Flask(
     static_url_path='/static'
 )
 
-# Enable CORS for all routes - allows Netlify frontend to call this backend
-CORS(app, resources={r"/*": {"origins": "*"}})
+# Configure CORS based on environment
+FLASK_ENV = os.getenv('FLASK_ENV', 'production')
+if FLASK_ENV == 'development':
+    # Allow all origins in development
+    CORS(app, resources={r"/*": {"origins": "*"}})
+else:
+    # Restrict CORS in production to Netlify domain
+    CORS(app, resources={r"/*": {"origins": [
+        "https://localhost:3000",
+        "http://localhost:3000",
+        "https://localhost",
+        os.getenv('FRONTEND_URL', '')
+    ]}})
 
 
 def _top_items(mapping: Dict[str, float], top_n: int) -> List[Tuple[int, str, float]]:
