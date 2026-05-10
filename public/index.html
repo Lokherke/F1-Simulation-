@@ -117,15 +117,45 @@
     <!-- Results will be rendered here -->
   </main>
 
+  <div id="backendNotice" style="display: none; max-width: 980px; margin: 0 auto 1.5rem; padding: 1rem 1.25rem; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 16px; background: rgba(239, 68, 68, 0.08); color: #fecaca; font-size: 0.95rem; line-height: 1.5;"></div>
+
   <script>
-    // Backend URL - works in both local dev and production
-    const BACKEND_URL = window.location.hostname === 'localhost' 
-      ? 'http://localhost:5000' 
-      : 'https://f1-simulation.onrender.com';
+    function resolveBackendUrl() {
+      const explicitUrl = (window.BACKEND_URL || '').trim();
+
+      if (explicitUrl) {
+        return explicitUrl.replace(/\/$/, '');
+      }
+
+      if (window.location.protocol === 'file:') {
+        return 'http://localhost:8000';
+      }
+
+      if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+        return 'http://localhost:8000';
+      }
+
+      return window.location.origin;
+    }
+
+    const BACKEND_URL = resolveBackendUrl();
     
     const simForm = document.getElementById('simForm');
     const loadingSpinner = document.getElementById('loadingSpinner');
     const resultsContainer = document.getElementById('resultsContainer');
+    const backendNotice = document.getElementById('backendNotice');
+
+    function showBackendNotice(message) {
+      backendNotice.textContent = message;
+      backendNotice.style.display = 'block';
+    }
+
+    const hasExplicitBackendUrl = Boolean((window.BACKEND_URL || '').trim());
+    const runningLocally = window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (!hasExplicitBackendUrl && !runningLocally) {
+      showBackendNotice('This static frontend needs `window.BACKEND_URL` to point to your deployed API. Set it before clicking Run Forecast, or the request will fail.');
+    }
 
     simForm.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -163,7 +193,11 @@
       } catch (error) {
         console.error('Error:', error);
         loadingSpinner.classList.remove('active');
-        resultsContainer.innerHTML = `<div style="color: red; padding: 2rem;">Error: ${error.message}. Make sure BACKEND_URL is set correctly.</div>`;
+        const apiHint = hasExplicitBackendUrl
+          ? 'Make sure the backend is running and reachable from this page.'
+          : 'Set window.BACKEND_URL to your API server URL before trying again.';
+
+        resultsContainer.innerHTML = `<div style="color: red; padding: 2rem;">Error: ${error.message}. ${apiHint}</div>`;
         resultsContainer.classList.add('active');
       }
     });

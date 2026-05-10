@@ -88,8 +88,10 @@ Then open `http://localhost:8000` in your browser.
 
 1. Update `public/index.html` line 173:
    ```javascript
-   const BACKEND_URL = 'https://PASTE-YOUR-RENDER-URL-HERE';
+   window.BACKEND_URL = 'https://PASTE-YOUR-BACKEND-URL-HERE';
    ```
+
+   If you serve the frontend from the same Flask app, you can omit this and the browser will use the current origin. For local Flask development, the frontend defaults to `http://localhost:8000`.
 
 2. Go to [netlify.com](https://netlify.com) and create account
 
@@ -106,7 +108,7 @@ Then open `http://localhost:8000` in your browser.
 
 ### API Endpoints
 
-**Backend URL:** `https://your-render-url.onrender.com`
+**Backend URL:** set `window.BACKEND_URL` to your deployed API origin when using a separate static frontend.
 
 | Endpoint | Method | Purpose |
 |----------|--------|---------|
